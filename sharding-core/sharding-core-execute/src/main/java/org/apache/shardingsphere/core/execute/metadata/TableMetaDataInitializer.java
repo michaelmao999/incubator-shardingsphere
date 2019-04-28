@@ -176,6 +176,7 @@ public final class TableMetaDataInitializer {
         if (!tablPrefixList.isEmpty()) {
             isMatch = false;
             int len = tablPrefixList.size();
+            tableName = tableName.toLowerCase();
             for (int index = 0; index < len; index++) {
                 if (tableName.startsWith(tablPrefixList.get(index))) {
                     isMatch = true;
