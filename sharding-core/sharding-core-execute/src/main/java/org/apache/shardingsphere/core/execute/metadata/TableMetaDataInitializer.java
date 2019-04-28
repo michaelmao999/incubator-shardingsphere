@@ -30,10 +30,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Table meta data initializer.
@@ -47,12 +44,22 @@ public final class TableMetaDataInitializer {
     private final TableMetaDataConnectionManager connectionManager;
     
     private final TableMetaDataLoader tableMetaDataLoader;
+
+    private List<String> tablPrefixList= new ArrayList<String>();
     
     public TableMetaDataInitializer(final ShardingDataSourceMetaData shardingDataSourceMetaData, final ShardingExecuteEngine executeEngine, 
                                     final TableMetaDataConnectionManager connectionManager, final int maxConnectionsSizePerQuery, final boolean isCheckingMetaData) {
         this.shardingDataSourceMetaData = shardingDataSourceMetaData;
         this.connectionManager = connectionManager;
         tableMetaDataLoader = new TableMetaDataLoader(shardingDataSourceMetaData, executeEngine, connectionManager, maxConnectionsSizePerQuery, isCheckingMetaData);
+        String tablePrefix = System.getProperty("sharding.tablePrefix");
+        if (tablePrefix != null) {
+            String[] tables = tablePrefix.split(",");
+            for (String table : tables) {
+                tablPrefixList.add(table.trim());
+            }
+
+        }
     }
     
     /**
@@ -105,10 +112,10 @@ public final class TableMetaDataInitializer {
         DataSourceMetaData dataSourceMetaData = shardingDataSourceMetaData.getActualDataSourceMetaData(dataSourceName);
         String catalog = null == dataSourceMetaData ? null : dataSourceMetaData.getSchemaName();
         try (Connection connection = connectionManager.getConnection(dataSourceName);
-             ResultSet resultSet = connection.getMetaData().getTables(catalog, getCurrentSchemaName(connection), null, new String[]{"TABLE"})) {
+             ResultSet resultSet = connection.getMetaData().getTables(catalog, getSchemaName(connection), null, new String[]{"TABLE"})) {
             while (resultSet.next()) {
                 String tableName = resultSet.getString("TABLE_NAME");
-                if (!tableName.contains("$") && !tableName.contains("/")) {
+                if (isMatchTableName(tableName)) {
                     result.add(tableName);
                 }
             }
@@ -123,4 +130,63 @@ public final class TableMetaDataInitializer {
             return null;
         }
     }
+
+    private static String getSchemaName(Connection connection) {
+        String schema = null;
+        try {
+            schema = connection.getSchema();
+        } catch (final AbstractMethodError | SQLException ignore ) {
+        }
+        if (schema == null) {
+            try {
+                java.sql.DatabaseMetaData dbMetadata = connection.getMetaData();
+                String dbName = dbMetadata.getDatabaseProductName();
+                if ("ORACLE".equalsIgnoreCase(dbName)) {
+                    String userName = dbMetadata.getUserName();
+                    ResultSet resultSet1 = dbMetadata.getSchemas();
+                    while (resultSet1.next()) {
+                        if (userName.equals(resultSet1.getString(1))) {
+                            schema = userName;
+                            break;
+                        }
+
+                    }
+                    resultSet1.close();
+                }
+            } catch (AbstractMethodError | SQLException ignore) {
+            }
+        }
+        return schema;
+    }
+
+    private boolean isMatchTableName(String tableName) {
+        int pos1 = tableName.indexOf('$');
+        if (pos1 >= 0) {
+            return false;
+        }
+        pos1 = tableName.indexOf('/');
+        if (pos1 >= 0) {
+            return false;
+        }
+        pos1 = tableName.indexOf('+');
+        if (pos1 >= 0) {
+            return false;
+        }
+        boolean isMatch = true;
+        if (!tablPrefixList.isEmpty()) {
+            isMatch = false;
+            int len = tablPrefixList.size();
+            for (int index = 0; index < len; index++) {
+                if (tableName.startsWith(tablPrefixList.get(index))) {
+                    isMatch = true;
+                    break;
+                }
+            }
+        }
+        return isMatch;
+
+    }
+
+
+
 }
