@@ -45,14 +45,14 @@ public final class SQLServerOffsetClauseParser implements SQLClauseParser {
      * @param selectStatement select statement
      */
     public void parse(final SelectStatement selectStatement) {
-        if (!lexerEngine.skipIfEqual(SQLServerKeyword.OFFSET)) {
+        if (!lexerEngine.skipIfEqualType(SQLServerKeyword.OFFSET)) {
             return;
         }
         int offsetValue = -1;
         int offsetIndex = -1;
-        if (lexerEngine.equalAny(Literals.INT)) {
+        if (lexerEngine.equalOne(Literals.INT)) {
             offsetValue = Integer.parseInt(lexerEngine.getCurrentToken().getLiterals());
-        } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+        } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
             offsetIndex = selectStatement.getParametersIndex();
             selectStatement.setParametersIndex(selectStatement.getParametersIndex() + 1);
         } else {
@@ -60,14 +60,14 @@ public final class SQLServerOffsetClauseParser implements SQLClauseParser {
         }
         lexerEngine.nextToken();
         Limit limit = new Limit();
-        if (lexerEngine.skipIfEqual(DefaultKeyword.FETCH)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.FETCH)) {
             lexerEngine.nextToken();
             int rowCountValue = -1;
             int rowCountIndex = -1;
             lexerEngine.nextToken();
-            if (lexerEngine.equalAny(Literals.INT)) {
+            if (lexerEngine.equalOne(Literals.INT)) {
                 rowCountValue = Integer.parseInt(lexerEngine.getCurrentToken().getLiterals());
-            } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+            } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
                 rowCountIndex = selectStatement.getParametersIndex();
                 selectStatement.setParametersIndex(selectStatement.getParametersIndex() + 1);
             } else {

@@ -38,10 +38,10 @@ public final class OracleTableReferencesClauseParser extends TableReferencesClau
     
     @Override
     protected void parseTableReference(final SQLStatement sqlStatement, final boolean isSingleTableOnly) {
-        if (getLexerEngine().skipIfEqual(OracleKeyword.ONLY)) {
-            getLexerEngine().skipIfEqual(Symbol.LEFT_PAREN);
+        if (getLexerEngine().skipIfEqualType(OracleKeyword.ONLY)) {
+            getLexerEngine().skipIfEqualType(Symbol.LEFT_PAREN);
             parseQueryTableExpression(sqlStatement, isSingleTableOnly);
-            getLexerEngine().skipIfEqual(Symbol.RIGHT_PAREN);
+            getLexerEngine().skipIfEqualType(Symbol.RIGHT_PAREN);
             parseFlashbackQueryClause();
         } else {
             parseQueryTableExpression(sqlStatement, isSingleTableOnly);
@@ -76,22 +76,22 @@ public final class OracleTableReferencesClauseParser extends TableReferencesClau
     }
     
     private boolean isFlashbackQueryClauseForVersions() {
-        return getLexerEngine().skipIfEqual(OracleKeyword.VERSIONS) && getLexerEngine().skipIfEqual(DefaultKeyword.BETWEEN);
+        return getLexerEngine().skipIfEqualType(OracleKeyword.VERSIONS) && getLexerEngine().skipIfEqualType(DefaultKeyword.BETWEEN);
     }
     
     private boolean isFlashbackQueryClauseForAs() {
-        return getLexerEngine().skipIfEqual(DefaultKeyword.AS) && getLexerEngine().skipIfEqual(DefaultKeyword.OF)
-                && (getLexerEngine().skipIfEqual(OracleKeyword.SCN) || getLexerEngine().skipIfEqual(OracleKeyword.TIMESTAMP));
+        return getLexerEngine().skipIfEqualType(DefaultKeyword.AS) && getLexerEngine().skipIfEqualType(DefaultKeyword.OF)
+                && (getLexerEngine().skipIfEqualType(OracleKeyword.SCN) || getLexerEngine().skipIfEqualType(OracleKeyword.TIMESTAMP));
     }
     
     private void parsePivotClause(final SQLStatement sqlStatement) {
-        if (getLexerEngine().skipIfEqual(OracleKeyword.PIVOT)) {
-            getLexerEngine().skipIfEqual(OracleKeyword.XML);
+        if (getLexerEngine().skipIfEqualType(OracleKeyword.PIVOT)) {
+            getLexerEngine().skipIfEqualType(OracleKeyword.XML);
             getLexerEngine().skipParentheses(sqlStatement);
-        } else if (getLexerEngine().skipIfEqual(OracleKeyword.UNPIVOT)) {
-            if (getLexerEngine().skipIfEqual(OracleKeyword.INCLUDE)) {
+        } else if (getLexerEngine().skipIfEqualType(OracleKeyword.UNPIVOT)) {
+            if (getLexerEngine().skipIfEqualType(OracleKeyword.INCLUDE)) {
                 getLexerEngine().accept(OracleKeyword.NULLS);
-            } else if (getLexerEngine().skipIfEqual(OracleKeyword.EXCLUDE)) {
+            } else if (getLexerEngine().skipIfEqualType(OracleKeyword.EXCLUDE)) {
                 getLexerEngine().accept(OracleKeyword.NULLS);
             }
             getLexerEngine().skipParentheses(sqlStatement);

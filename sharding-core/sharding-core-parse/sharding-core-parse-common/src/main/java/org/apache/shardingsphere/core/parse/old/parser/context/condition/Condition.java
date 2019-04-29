@@ -26,10 +26,7 @@ import lombok.ToString;
 import org.apache.shardingsphere.core.constant.ShardingOperator;
 import org.apache.shardingsphere.core.exception.ShardingException;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLNumberExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLPlaceholderExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLTextExpression;
+import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -103,6 +100,8 @@ public class Condition {
             positionValueMap.put(position, ((SQLTextExpression) sqlExpression).getText());
         } else if (sqlExpression instanceof SQLNumberExpression) {
             positionValueMap.put(position, (Comparable) ((SQLNumberExpression) sqlExpression).getNumber());
+        } else if (sqlExpression instanceof SQLFunctionExpression) {
+            positionValueMap.put(position, (Comparable)((SQLFunctionExpression) sqlExpression).getValue());
         }
     }
     

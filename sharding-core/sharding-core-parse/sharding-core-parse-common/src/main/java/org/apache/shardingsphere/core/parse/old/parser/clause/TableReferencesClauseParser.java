@@ -77,7 +77,7 @@ public class TableReferencesClauseParser implements SQLClauseParser {
     public final void parse(final SQLStatement sqlStatement, final boolean isSingleTableOnly) {
         do {
             parseTableReference(sqlStatement, isSingleTableOnly);
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
     }
 
     /**
@@ -98,7 +98,7 @@ public class TableReferencesClauseParser implements SQLClauseParser {
         if (sqlStatement instanceof InsertStatement) {
             sqlStatement.addSQLToken(new InsertValuesToken(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length()));
         }
-        if (lexerEngine.skipIfEqual(Symbol.DOT)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOT)) {
             skippedSchemaNameLength = literals.length() + Symbol.DOT.getLiterals().length();
             literals = lexerEngine.getCurrentToken().getLiterals();
             lexerEngine.nextToken();
@@ -123,11 +123,11 @@ public class TableReferencesClauseParser implements SQLClauseParser {
     }
     
     private void parseForceIndex(final String tableName, final SQLStatement sqlStatement) {
-        boolean skipIfForce = lexerEngine.skipIfEqual(MySQLKeyword.FORCE) && this.lexerEngine.skipIfEqual(DefaultKeyword.INDEX);
+        boolean skipIfForce = lexerEngine.skipIfEqualType(MySQLKeyword.FORCE) && this.lexerEngine.skipIfEqualType(DefaultKeyword.INDEX);
         if (skipIfForce) {
             lexerEngine.accept(Symbol.LEFT_PAREN);
             do {
-                lexerEngine.skipIfEqual(Symbol.COMMA);
+                lexerEngine.skipIfEqualType(Symbol.COMMA);
                 String literals = lexerEngine.getCurrentToken().getLiterals();
                 Preconditions.checkState(!Symbol.RIGHT_PAREN.getLiterals().equals(literals), "There is an error in the vicinity of the force index syntax.");
                 if (literals.equals(shardingRule.getTableRule(tableName).getLogicIndex())) {
@@ -135,14 +135,14 @@ public class TableReferencesClauseParser implements SQLClauseParser {
                     sqlStatement.addSQLToken(new IndexToken(beginPosition, lexerEngine.getCurrentToken().getEndPosition() - 1, tableName));
                 }
                 lexerEngine.nextToken();
-            } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+            } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
             lexerEngine.accept(Symbol.RIGHT_PAREN);
         }
     }
     
     private void parseJoinTable(final SQLStatement sqlStatement) {
         while (parseJoinType()) {
-            if (lexerEngine.equalAny(Symbol.LEFT_PAREN)) {
+            if (lexerEngine.equalOne(Symbol.LEFT_PAREN)) {
                 throw new SQLParsingUnsupportedException("Cannot support subquery for join table.");
             }
             parseTableFactor(sqlStatement, false);
@@ -173,13 +173,13 @@ public class TableReferencesClauseParser implements SQLClauseParser {
     }
     
     private void parseJoinCondition(final SQLStatement sqlStatement) {
-        if (lexerEngine.skipIfEqual(DefaultKeyword.ON)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.ON)) {
             do {
                 basicExpressionParser.parse(sqlStatement);
                 lexerEngine.accept(Symbol.EQ);
                 basicExpressionParser.parse(sqlStatement);
-            } while (lexerEngine.skipIfEqual(DefaultKeyword.AND));
-        } else if (lexerEngine.skipIfEqual(DefaultKeyword.USING)) {
+            } while (lexerEngine.skipIfEqualType(DefaultKeyword.AND));
+        } else if (lexerEngine.skipIfEqualType(DefaultKeyword.USING)) {
             lexerEngine.skipParentheses(sqlStatement);
         }
     }
@@ -194,7 +194,7 @@ public class TableReferencesClauseParser implements SQLClauseParser {
         String literals = lexerEngine.getCurrentToken().getLiterals();
         int skippedSchemaNameLength = 0;
         lexerEngine.nextToken();
-        if (lexerEngine.skipIfEqual(Symbol.DOT)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOT)) {
             skippedSchemaNameLength = literals.length() + Symbol.DOT.getLiterals().length();
             literals = lexerEngine.getCurrentToken().getLiterals();
             lexerEngine.nextToken();

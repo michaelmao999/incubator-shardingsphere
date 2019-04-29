@@ -48,18 +48,18 @@ public final class OracleForClauseParser implements SQLClauseParser {
      * @param selectStatement select statement
      */
     public void parse(final SelectStatement selectStatement) {
-        if (!lexerEngine.skipIfEqual(DefaultKeyword.FOR)) {
+        if (!lexerEngine.skipIfEqualType(DefaultKeyword.FOR)) {
             return;
         }
         lexerEngine.accept(DefaultKeyword.UPDATE);
-        if (lexerEngine.skipIfEqual(DefaultKeyword.OF)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.OF)) {
             do {
                 basicExpressionParser.parse(selectStatement);
-            } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+            } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
         }
         if (lexerEngine.equalAny(OracleKeyword.NOWAIT, OracleKeyword.WAIT)) {
             lexerEngine.nextToken();
-        } else if (lexerEngine.skipIfEqual(OracleKeyword.SKIP)) {
+        } else if (lexerEngine.skipIfEqualType(OracleKeyword.SKIP)) {
             lexerEngine.accept(OracleKeyword.LOCKED);
         }
     }

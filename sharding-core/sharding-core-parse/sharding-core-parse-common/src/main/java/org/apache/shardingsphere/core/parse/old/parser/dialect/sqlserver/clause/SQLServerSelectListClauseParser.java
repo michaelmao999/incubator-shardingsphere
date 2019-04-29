@@ -50,7 +50,7 @@ public final class SQLServerSelectListClauseParser extends SelectListClauseParse
     
     @Override
     protected boolean isRowNumberSelectItem() {
-        return getLexerEngine().skipIfEqual(SQLServerKeyword.ROW_NUMBER);
+        return getLexerEngine().skipIfEqualType(SQLServerKeyword.ROW_NUMBER);
     }
     
     @Override

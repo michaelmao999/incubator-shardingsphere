@@ -48,7 +48,7 @@ public final class SQLServerTableReferencesClauseParser extends TableReferencesC
     }
     
     private void parseTableHint(final SQLStatement sqlStatement) {
-        if (getLexerEngine().skipIfEqual(DefaultKeyword.WITH)) {
+        if (getLexerEngine().skipIfEqualType(DefaultKeyword.WITH)) {
             getLexerEngine().skipParentheses(sqlStatement);
         }
     }

@@ -91,13 +91,13 @@ public abstract class AbstractSelectParser implements SQLParser {
     
     protected final void parseFrom(final SelectStatement selectStatement) {
         lexerEngine.unsupportedIfEqual(DefaultKeyword.INTO);
-        if (lexerEngine.skipIfEqual(DefaultKeyword.FROM)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.FROM)) {
             parseTable(selectStatement);
         }
     }
     
     private void parseTable(final SelectStatement selectStatement) {
-        if (lexerEngine.skipIfEqual(Symbol.LEFT_PAREN)) {
+        if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
             selectStatement.setSubqueryStatement(parseInternal());
             if (lexerEngine.equalAny(DefaultKeyword.WHERE, Assist.END)) {
                 return;

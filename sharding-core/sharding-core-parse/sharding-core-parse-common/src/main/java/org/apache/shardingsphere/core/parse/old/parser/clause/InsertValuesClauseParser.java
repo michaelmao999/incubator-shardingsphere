@@ -99,7 +99,7 @@ public abstract class InsertValuesClauseParser implements SQLClauseParser {
                 sqlExpressions.add(basicExpressionParser.parse(insertStatement));
                 skipsDoubleColon();
                 count++;
-            } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+            } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
             Collection<String> columnNames = new ArrayList<>(insertStatement.getColumnNames());
             Optional<String> generateKeyColumnName = shardingRule.findGenerateKeyColumnName(insertStatement.getTables().getSingleTableName());
             if (generateKeyColumnName.isPresent() && count != insertStatement.getColumnNames().size()) {
@@ -122,11 +122,11 @@ public abstract class InsertValuesClauseParser implements SQLClauseParser {
             InsertValue insertValue = new InsertValue(sqlExpressions);
             insertStatement.getValues().add(insertValue);
             insertStatement.getRouteConditions().getOrCondition().getAndConditions().add(andCondition);
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
     }
     
     private void skipsDoubleColon() {
-        if (lexerEngine.skipIfEqual(Symbol.DOUBLE_COLON)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOUBLE_COLON)) {
             lexerEngine.nextToken();
         }
     }

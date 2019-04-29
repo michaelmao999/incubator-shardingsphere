@@ -22,6 +22,7 @@ import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Keyword;
 import org.apache.shardingsphere.core.parse.old.parser.clause.WhereClauseParser;
 import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.SelectItem;
+import org.apache.shardingsphere.core.parse.old.parser.dialect.postgresql.clause.expression.PostgreSQLFunctionExecutor;
 
 import java.util.List;
 
@@ -33,7 +34,9 @@ import java.util.List;
 public final class PostgreSQLWhereClauseParser extends WhereClauseParser {
     
     public PostgreSQLWhereClauseParser(final LexerEngine lexerEngine) {
+
         super(DatabaseType.PostgreSQL, lexerEngine);
+        setSqlFunctionExector(new PostgreSQLFunctionExecutor(null));
     }
     
     @Override

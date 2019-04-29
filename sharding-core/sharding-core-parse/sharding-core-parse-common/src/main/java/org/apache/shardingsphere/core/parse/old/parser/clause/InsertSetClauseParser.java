@@ -100,7 +100,7 @@ public abstract class InsertSetClauseParser implements SQLClauseParser {
                     && (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression)) {
                 insertStatement.getRouteConditions().add(new Condition(column, right));
             }
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
         InsertValue insertValue = new InsertValue(new LinkedList<SQLExpression>());
         insertStatement.getValues().add(insertValue);
     }

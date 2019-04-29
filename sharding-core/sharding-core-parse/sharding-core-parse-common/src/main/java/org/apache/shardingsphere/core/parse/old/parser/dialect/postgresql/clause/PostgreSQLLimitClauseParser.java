@@ -52,9 +52,9 @@ public final class PostgreSQLLimitClauseParser implements SQLClauseParser {
         Optional<LimitValue> offset = Optional.absent();
         Optional<LimitValue> rowCount = Optional.absent();
         while (true) {
-            if (lexerEngine.skipIfEqual(PostgreSQLKeyword.LIMIT)) {
+            if (lexerEngine.skipIfEqualType(PostgreSQLKeyword.LIMIT)) {
                 rowCount = buildRowCount(selectStatement);
-            } else if (lexerEngine.skipIfEqual(PostgreSQLKeyword.OFFSET)) {
+            } else if (lexerEngine.skipIfEqualType(PostgreSQLKeyword.OFFSET)) {
                 offset = buildOffset(selectStatement);
             } else {
                 break;
@@ -70,14 +70,14 @@ public final class PostgreSQLLimitClauseParser implements SQLClauseParser {
         int rowCountValue = -1;
         int rowCountIndex = -1;
         int valueBeginPosition = lexerEngine.getCurrentToken().getEndPosition();
-        if (lexerEngine.equalAny(DefaultKeyword.ALL)) {
+        if (lexerEngine.equalOne(DefaultKeyword.ALL)) {
             lexerEngine.nextToken();
         } else {
             if (lexerEngine.equalAny(Literals.INT, Literals.FLOAT)) {
                 rowCountValue = NumberUtil.roundHalfUp(lexerEngine.getCurrentToken().getLiterals());
                 valueBeginPosition = valueBeginPosition - (rowCountValue + "").length();
                 selectStatement.addSQLToken(new RowCountToken(valueBeginPosition, rowCountValue));
-            } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+            } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
                 rowCountIndex = parameterIndex++;
                 selectStatement.setParametersIndex(parameterIndex);
                 rowCountValue = -1;
@@ -98,7 +98,7 @@ public final class PostgreSQLLimitClauseParser implements SQLClauseParser {
             offsetValue = NumberUtil.roundHalfUp(lexerEngine.getCurrentToken().getLiterals());
             offsetBeginPosition = offsetBeginPosition - (offsetValue + "").length();
             selectStatement.addSQLToken(new OffsetToken(offsetBeginPosition, offsetValue));
-        } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+        } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
             offsetIndex = parameterIndex++;
             selectStatement.setParametersIndex(parameterIndex);
         } else {

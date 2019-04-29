@@ -53,7 +53,7 @@ public final class UpdateSetItemsClauseParser implements SQLClauseParser {
         lexerEngine.accept(DefaultKeyword.SET);
         do {
             parseSetItem(updateStatement);
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
     }
     
     private void parseSetItem(final DMLStatement updateStatement) {
@@ -64,14 +64,14 @@ public final class UpdateSetItemsClauseParser implements SQLClauseParser {
     }
     
     private void parseSetColumn(final DMLStatement updateStatement) {
-        if (lexerEngine.equalAny(Symbol.LEFT_PAREN)) {
+        if (lexerEngine.equalOne(Symbol.LEFT_PAREN)) {
             lexerEngine.skipParentheses(updateStatement);
             return;
         }
         int beginPosition = lexerEngine.getCurrentToken().getEndPosition();
         String literals = lexerEngine.getCurrentToken().getLiterals();
         lexerEngine.nextToken();
-        if (lexerEngine.skipIfEqual(Symbol.DOT)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOT)) {
             if (updateStatement.getTables().getSingleTableName().equalsIgnoreCase(SQLUtil.getExactlyValue(literals))) {
                 updateStatement.addSQLToken(new TableToken(beginPosition - literals.length(), literals, QuoteCharacter.getQuoteCharacter(literals), 0));
             }
@@ -84,7 +84,7 @@ public final class UpdateSetItemsClauseParser implements SQLClauseParser {
     }
     
     private void skipsDoubleColon() {
-        if (lexerEngine.skipIfEqual(Symbol.DOUBLE_COLON)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOUBLE_COLON)) {
             lexerEngine.nextToken();
         }
     }

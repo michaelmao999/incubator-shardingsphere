@@ -22,17 +22,15 @@ import org.apache.shardingsphere.core.parse.antlr.constant.QuoteCharacter;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.TableToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
+import org.apache.shardingsphere.core.parse.old.lexer.token.Assist;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Literals;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLIdentifierExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLIgnoreExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLNumberExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLPlaceholderExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLPropertyExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLTextExpression;
+import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.parse.util.SQLUtil;
 import org.apache.shardingsphere.core.util.NumberUtil;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Basic expression parser.
@@ -66,14 +64,18 @@ public final class BasicExpressionParser {
         final int beginPosition = lexerEngine.getCurrentToken().getEndPosition() - literals.length();
         final SQLExpression expression = getExpression(literals, sqlStatement);
         lexerEngine.nextToken();
-        if (lexerEngine.skipIfEqual(Symbol.DOT)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOT)) {
             String property = lexerEngine.getCurrentToken().getLiterals();
             lexerEngine.nextToken();
             return skipIfCompositeExpression(sqlStatement)
                     ? new SQLIgnoreExpression(lexerEngine.getInput().substring(beginPosition, lexerEngine.getCurrentToken().getEndPosition()))
                     : new SQLPropertyExpression(new SQLIdentifierExpression(literals), property);
         }
-        if (lexerEngine.equalAny(Symbol.LEFT_PAREN)) {
+        //Parse SQL function, such as to_date('05-01-2019','MM-DD-YYYY')
+        if (lexerEngine.equalOne(Symbol.LEFT_PAREN) && expression instanceof SQLIdentifierExpression) {
+            return parseFunction(((SQLIdentifierExpression)expression).getName(), sqlStatement );
+        }
+        if (lexerEngine.equalOne(Symbol.LEFT_PAREN)) {
             lexerEngine.skipParentheses(sqlStatement);
             skipRestCompositeExpression(sqlStatement);
             return new SQLIgnoreExpression(lexerEngine.getInput().substring(beginPosition,
@@ -82,25 +84,55 @@ public final class BasicExpressionParser {
         return skipIfCompositeExpression(sqlStatement)
                 ? new SQLIgnoreExpression(lexerEngine.getInput().substring(beginPosition, lexerEngine.getCurrentToken().getEndPosition())) : expression;
     }
-    
+
+    public SQLFunctionExpression parseFunction(final String functionName, final SQLStatement sqlStatement) {
+        List<SQLExpression> parameters = new ArrayList<SQLExpression>();
+        int count = 0;
+        if (Symbol.LEFT_PAREN == lexerEngine.getCurrentToken().getType()) {
+            while (true) {
+                lexerEngine.nextToken();
+                SQLExpression parameter = parse(sqlStatement);
+                parameters.add(parameter);
+                if (lexerEngine.equalOne(Symbol.COMMA)) {
+                    continue;
+                }
+                if (lexerEngine.equalOne(Symbol.QUESTION)) {
+                    sqlStatement.setParametersIndex(sqlStatement.getParametersIndex() + 1);
+                }
+                if (Assist.END == lexerEngine.getCurrentToken().getType() || (Symbol.RIGHT_PAREN == lexerEngine.getCurrentToken().getType() && 0 == count)) {
+                    break;
+                }
+                if (Symbol.LEFT_PAREN == lexerEngine.getCurrentToken().getType()) {
+                    count++;
+                } else if (Symbol.RIGHT_PAREN == lexerEngine.getCurrentToken().getType()) {
+                    count--;
+                }
+
+            }
+            lexerEngine.nextToken();
+        }
+        return new SQLFunctionExpression(functionName.toLowerCase(), parameters);
+    }
+
+
     private SQLExpression getExpression(final String literals, final SQLStatement sqlStatement) {
-        if (lexerEngine.equalAny(Symbol.QUESTION)) {
+        if (lexerEngine.equalOne(Symbol.QUESTION)) {
             sqlStatement.setParametersIndex(sqlStatement.getParametersIndex() + 1);
             return new SQLPlaceholderExpression(sqlStatement.getParametersIndex() - 1);
         }
-        if (lexerEngine.equalAny(Literals.CHARS)) {
+        if (lexerEngine.equalOne(Literals.CHARS)) {
             return new SQLTextExpression(literals);
         }
-        if (lexerEngine.equalAny(Literals.INT)) {
+        if (lexerEngine.equalOne(Literals.INT)) {
             return new SQLNumberExpression(NumberUtil.getExactlyNumber(literals, 10));
         }
-        if (lexerEngine.equalAny(Literals.FLOAT)) {
+        if (lexerEngine.equalOne(Literals.FLOAT)) {
             return new SQLNumberExpression(Double.parseDouble(literals));
         }
-        if (lexerEngine.equalAny(Literals.HEX)) {
+        if (lexerEngine.equalOne(Literals.HEX)) {
             return new SQLNumberExpression(NumberUtil.getExactlyNumber(literals, 16));
         }
-        if (lexerEngine.equalAny(Literals.IDENTIFIER)) {
+        if (lexerEngine.equalOne(Literals.IDENTIFIER)) {
             return new SQLIdentifierExpression(SQLUtil.getExactlyValue(literals));
         }
         return new SQLIgnoreExpression(literals);
@@ -122,7 +154,7 @@ public final class BasicExpressionParser {
     
     private void skipRestCompositeExpression(final SQLStatement sqlStatement) {
         while (lexerEngine.skipIfEqual(Symbol.PLUS, Symbol.SUB, Symbol.STAR, Symbol.SLASH, Symbol.PERCENT, Symbol.AMP, Symbol.BAR, Symbol.DOUBLE_AMP, Symbol.DOUBLE_BAR, Symbol.CARET, Symbol.DOT)) {
-            if (lexerEngine.equalAny(Symbol.QUESTION)) {
+            if (lexerEngine.equalOne(Symbol.QUESTION)) {
                 sqlStatement.setParametersIndex(sqlStatement.getParametersIndex() + 1);
             }
             lexerEngine.nextToken();

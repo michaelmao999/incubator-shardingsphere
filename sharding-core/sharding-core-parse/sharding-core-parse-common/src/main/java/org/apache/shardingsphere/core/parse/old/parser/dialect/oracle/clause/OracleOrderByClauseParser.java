@@ -36,13 +36,13 @@ public final class OracleOrderByClauseParser extends OrderByClauseParser {
     
     @Override
     protected OrderDirection getNullOrderDirection() {
-        if (!getLexerEngine().skipIfEqual(OracleKeyword.NULLS)) {
+        if (!getLexerEngine().skipIfEqualType(OracleKeyword.NULLS)) {
             return OrderDirection.ASC;
         }
-        if (getLexerEngine().skipIfEqual(OracleKeyword.FIRST)) {
+        if (getLexerEngine().skipIfEqualType(OracleKeyword.FIRST)) {
             return OrderDirection.ASC;
         }
-        if (getLexerEngine().skipIfEqual(OracleKeyword.LAST)) {
+        if (getLexerEngine().skipIfEqualType(OracleKeyword.LAST)) {
             return OrderDirection.DESC;
         }
         throw new SQLParsingException(getLexerEngine());

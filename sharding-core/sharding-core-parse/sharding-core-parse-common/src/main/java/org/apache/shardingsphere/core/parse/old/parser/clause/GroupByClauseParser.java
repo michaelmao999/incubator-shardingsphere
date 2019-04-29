@@ -56,13 +56,13 @@ public abstract class GroupByClauseParser implements SQLClauseParser {
      * @param selectStatement select statement
      */
     public final void parse(final SelectStatement selectStatement) {
-        if (!lexerEngine.skipIfEqual(DefaultKeyword.GROUP)) {
+        if (!lexerEngine.skipIfEqualType(DefaultKeyword.GROUP)) {
             return;
         }
         lexerEngine.accept(DefaultKeyword.BY);
         while (true) {
             addGroupByItem(basicExpressionParser.parse(selectStatement), selectStatement);
-            if (!lexerEngine.equalAny(Symbol.COMMA)) {
+            if (!lexerEngine.equalOne(Symbol.COMMA)) {
                 break;
             }
             lexerEngine.nextToken();
@@ -74,9 +74,9 @@ public abstract class GroupByClauseParser implements SQLClauseParser {
     private void addGroupByItem(final SQLExpression sqlExpression, final SelectStatement selectStatement) {
         lexerEngine.unsupportedIfEqual(getUnsupportedKeywordBeforeGroupByItem());
         OrderDirection orderDirection = OrderDirection.ASC;
-        if (lexerEngine.equalAny(DefaultKeyword.ASC)) {
+        if (lexerEngine.equalOne(DefaultKeyword.ASC)) {
             lexerEngine.nextToken();
-        } else if (lexerEngine.skipIfEqual(DefaultKeyword.DESC)) {
+        } else if (lexerEngine.skipIfEqualType(DefaultKeyword.DESC)) {
             orderDirection = OrderDirection.DESC;
         }
         OrderItem orderItem;

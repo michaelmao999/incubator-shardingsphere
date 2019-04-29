@@ -54,7 +54,7 @@ public abstract class InsertIntoClauseParser implements SQLClauseParser {
     private void skipBetweenTableAndValues(final InsertStatement insertStatement) {
         while (lexerEngine.skipIfEqual(getSkippedKeywordsBetweenTableAndValues())) {
             lexerEngine.nextToken();
-            if (lexerEngine.equalAny(Symbol.LEFT_PAREN)) {
+            if (lexerEngine.equalOne(Symbol.LEFT_PAREN)) {
                 lexerEngine.skipParentheses(insertStatement);
             }
         }

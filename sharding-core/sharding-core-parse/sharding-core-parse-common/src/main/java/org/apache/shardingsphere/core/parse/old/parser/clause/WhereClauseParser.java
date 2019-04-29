@@ -40,12 +40,7 @@ import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.Select
 import org.apache.shardingsphere.core.parse.old.parser.context.table.Table;
 import org.apache.shardingsphere.core.parse.old.parser.context.table.Tables;
 import org.apache.shardingsphere.core.parse.old.parser.dialect.ExpressionParserFactory;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLIdentifierExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLNumberExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLPlaceholderExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLPropertyExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLTextExpression;
+import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.parse.util.SQLUtil;
 import org.apache.shardingsphere.core.rule.ShardingRule;
 
@@ -68,6 +63,8 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     private final AliasExpressionParser aliasExpressionParser;
     
     private final BasicExpressionParser basicExpressionParser;
+
+    private SQLFunctionExector sqlFunctionExector;
     
     public WhereClauseParser(final DatabaseType databaseType, final LexerEngine lexerEngine) {
         this.databaseType = databaseType;
@@ -75,7 +72,15 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         aliasExpressionParser = ExpressionParserFactory.createAliasExpressionParser(lexerEngine);
         basicExpressionParser = ExpressionParserFactory.createBasicExpressionParser(lexerEngine);
     }
-    
+
+    public SQLFunctionExector getSqlFunctionExector() {
+        return sqlFunctionExector;
+    }
+
+    public void setSqlFunctionExector(SQLFunctionExector sqlFunctionExector) {
+        this.sqlFunctionExector = sqlFunctionExector;
+    }
+
     /**
      * Parse where.
      *
@@ -85,7 +90,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
      */
     public void parse(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
         aliasExpressionParser.parseTableAlias();
-        if (lexerEngine.skipIfEqual(DefaultKeyword.WHERE)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.WHERE)) {
             parseWhere(shardingRule, sqlStatement, items);
         }
     }
@@ -100,11 +105,11 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     private OrCondition parseOr(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
         OrCondition result = new OrCondition();
         do {
-            if (lexerEngine.skipIfEqual(Symbol.LEFT_PAREN)) {
+            if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
                 OrCondition subOrCondition = parseOr(shardingRule, sqlStatement, items);
-                lexerEngine.skipIfEqual(Symbol.RIGHT_PAREN);
+                lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
                 OrCondition orCondition = null;
-                if (lexerEngine.skipIfEqual(DefaultKeyword.AND)) {
+                if (lexerEngine.skipIfEqualType(DefaultKeyword.AND)) {
                     orCondition = parseAnd(shardingRule, sqlStatement, items);
                 }
                 result.getAndConditions().addAll(merge(subOrCondition, orCondition).getAndConditions());
@@ -112,23 +117,23 @@ public abstract class WhereClauseParser implements SQLClauseParser {
                 OrCondition orCondition = parseAnd(shardingRule, sqlStatement, items);
                 result.getAndConditions().addAll(orCondition.getAndConditions());
             }
-        } while (lexerEngine.skipIfEqual(DefaultKeyword.OR));
+        } while (lexerEngine.skipIfEqualType(DefaultKeyword.OR));
         return result;
     }
     
     private OrCondition parseAnd(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
         OrCondition result = new OrCondition();
         do {
-            if (lexerEngine.skipIfEqual(Symbol.LEFT_PAREN)) {
+            if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
                 OrCondition subOrCondition = parseOr(shardingRule, sqlStatement, items);
-                lexerEngine.skipIfEqual(Symbol.RIGHT_PAREN);
+                lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
                 result = merge(result, subOrCondition);
             } else {
                 Condition condition = parseComparisonCondition(shardingRule, sqlStatement, items);
                 skipsDoubleColon();
                 result = merge(result, new OrCondition(condition));
             }
-        } while (lexerEngine.skipIfEqual(DefaultKeyword.AND));
+        } while (lexerEngine.skipIfEqualType(DefaultKeyword.AND));
         return result;
     }
     
@@ -162,33 +167,33 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     private Condition parseComparisonCondition(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
         Condition result;
         SQLExpression left = basicExpressionParser.parse(sqlStatement);
-        if (lexerEngine.skipIfEqual(Symbol.EQ)) {
+        if (lexerEngine.skipIfEqualType(Symbol.EQ)) {
             result = parseEqualCondition(shardingRule, sqlStatement, left);
             return result;
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.IN)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.IN)) {
             result = parseInCondition(shardingRule, sqlStatement, left);
             return result;
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.BETWEEN)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.BETWEEN)) {
             result = parseBetweenCondition(shardingRule, sqlStatement, left);
             return result;
         }
         result = new NullCondition();
         if (sqlStatement instanceof SelectStatement && isRowNumberCondition(items, left)) {
-            if (lexerEngine.skipIfEqual(Symbol.LT)) {
+            if (lexerEngine.skipIfEqualType(Symbol.LT)) {
                 parseRowCountCondition((SelectStatement) sqlStatement, false);
                 return result;
             }
-            if (lexerEngine.skipIfEqual(Symbol.LT_EQ)) {
+            if (lexerEngine.skipIfEqualType(Symbol.LT_EQ)) {
                 parseRowCountCondition((SelectStatement) sqlStatement, true);
                 return result;
             }
-            if (lexerEngine.skipIfEqual(Symbol.GT)) {
+            if (lexerEngine.skipIfEqualType(Symbol.GT)) {
                 parseOffsetCondition((SelectStatement) sqlStatement, false);
                 return result;
             }
-            if (lexerEngine.skipIfEqual(Symbol.GT_EQ)) {
+            if (lexerEngine.skipIfEqualType(Symbol.GT_EQ)) {
                 parseOffsetCondition((SelectStatement) sqlStatement, true);
                 return result;
             }
@@ -197,10 +202,10 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         otherConditionOperators.addAll(
                 Arrays.asList(Symbol.LT, Symbol.LT_EQ, Symbol.GT, Symbol.GT_EQ, Symbol.LT_GT, Symbol.BANG_EQ, Symbol.BANG_GT, Symbol.BANG_LT, DefaultKeyword.LIKE, DefaultKeyword.IS));
         if (lexerEngine.skipIfEqual(otherConditionOperators.toArray(new Keyword[otherConditionOperators.size()]))) {
-            lexerEngine.skipIfEqual(DefaultKeyword.NOT);
+            lexerEngine.skipIfEqualType(DefaultKeyword.NOT);
             parseOtherCondition(sqlStatement);
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.NOT)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.NOT)) {
             parseNotCondition(sqlStatement);
         }
         return result;
@@ -232,7 +237,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
                 hasComplexExpression = true;
             }
             skipsDoubleColon();
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
         lexerEngine.accept(Symbol.RIGHT_PAREN);
         if (!sqlStatement.getTables().isSingleTable() && !(left instanceof SQLPropertyExpression)) {
             return new NullCondition();
@@ -248,17 +253,16 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     
     private Condition parseBetweenCondition(final ShardingRule shardingRule, final SQLStatement sqlStatement, final SQLExpression left) {
         boolean hasComplexExpression = false;
-        List<SQLExpression> rights = new LinkedList<>();
         SQLExpression right1 = basicExpressionParser.parse(sqlStatement);
-        rights.add(right1);
-        if (!(right1 instanceof SQLNumberExpression || right1 instanceof SQLTextExpression || right1 instanceof SQLPlaceholderExpression)) {
+        if (!(right1 instanceof SQLNumberExpression || right1 instanceof SQLTextExpression
+                || right1 instanceof SQLPlaceholderExpression || right1 instanceof SQLFunctionExpression)) {
             hasComplexExpression = true;
         }
         skipsDoubleColon();
         lexerEngine.accept(DefaultKeyword.AND);
         SQLExpression right2 = basicExpressionParser.parse(sqlStatement);
-        rights.add(right2);
-        if (!(right2 instanceof SQLNumberExpression || right2 instanceof SQLTextExpression || right2 instanceof SQLPlaceholderExpression)) {
+        if (!(right2 instanceof SQLNumberExpression || right2 instanceof SQLTextExpression
+                || right2 instanceof SQLPlaceholderExpression || right2 instanceof SQLFunctionExpression)) {
             hasComplexExpression = true;
         }
         if (!sqlStatement.getTables().isSingleTable() && !(left instanceof SQLPropertyExpression)) {
@@ -267,7 +271,11 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         if (!hasComplexExpression) {
             Optional<Column> column = find(sqlStatement.getTables(), left);
             if (column.isPresent() && shardingRule.isShardingColumn(column.get().getName(), column.get().getTableName())) {
-                return new Condition(column.get(), rights.get(0), rights.get(1));
+                if (sqlFunctionExector != null) {
+                    sqlFunctionExector.compute((SQLFunctionExpression)right1);
+                    sqlFunctionExector.compute((SQLFunctionExpression)right2);
+                }
+                return new Condition(column.get(), right1, right2);
             }
         }
         return new NullCondition();
@@ -322,19 +330,19 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     }
     
     private void parseNotCondition(final SQLStatement sqlStatement) {
-        if (lexerEngine.skipIfEqual(DefaultKeyword.BETWEEN)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.BETWEEN)) {
             parseOtherCondition(sqlStatement);
             skipsDoubleColon();
             lexerEngine.accept(DefaultKeyword.AND);
             parseOtherCondition(sqlStatement);
             return;
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.IN)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.IN)) {
             lexerEngine.accept(Symbol.LEFT_PAREN);
             do {
                 parseOtherCondition(sqlStatement);
                 skipsDoubleColon();
-            } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+            } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
             lexerEngine.accept(Symbol.RIGHT_PAREN);
         } else {
             lexerEngine.nextToken();
@@ -362,7 +370,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     }
     
     private void skipsDoubleColon() {
-        if (lexerEngine.skipIfEqual(Symbol.DOUBLE_COLON)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOUBLE_COLON)) {
             lexerEngine.nextToken();
         }
     }

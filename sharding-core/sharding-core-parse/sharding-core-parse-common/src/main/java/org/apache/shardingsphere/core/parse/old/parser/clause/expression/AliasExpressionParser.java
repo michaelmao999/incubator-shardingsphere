@@ -47,7 +47,7 @@ public abstract class AliasExpressionParser {
      * @return alias for select item
      */
     public Optional<String> parseSelectItemAlias() {
-        if (lexerEngine.skipIfEqual(DefaultKeyword.AS)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.AS)) {
             return parseWithAs(null, false, null);
         }
         if (lexerEngine.equalAny(getDefaultAvailableKeywordsForSelectItemAlias()) || lexerEngine.equalAny(getCustomizedAvailableKeywordsForSelectItemAlias())) {
@@ -101,7 +101,7 @@ public abstract class AliasExpressionParser {
      * @return alias for table
      */
     public Optional<String> parseTableAlias(final SQLStatement sqlStatement, final boolean setTableToken, final String tableName) {
-        if (lexerEngine.skipIfEqual(DefaultKeyword.AS)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.AS)) {
             return parseWithAs(sqlStatement, setTableToken, tableName);
         }
         if (lexerEngine.equalAny(getDefaultAvailableKeywordsForTableAlias()) || lexerEngine.equalAny(getCustomizedAvailableKeywordsForTableAlias())) {

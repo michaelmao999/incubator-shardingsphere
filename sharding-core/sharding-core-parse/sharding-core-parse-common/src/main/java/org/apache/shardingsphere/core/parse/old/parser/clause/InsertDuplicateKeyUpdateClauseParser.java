@@ -68,14 +68,14 @@ public abstract class InsertDuplicateKeyUpdateClauseParser implements SQLClauseP
             }
             basicExpressionParser.parse(insertStatement);
             lexerEngine.accept(Symbol.EQ);
-            if (lexerEngine.skipIfEqual(DefaultKeyword.VALUES)) {
+            if (lexerEngine.skipIfEqualType(DefaultKeyword.VALUES)) {
                 lexerEngine.accept(Symbol.LEFT_PAREN);
                 basicExpressionParser.parse(insertStatement);
                 lexerEngine.accept(Symbol.RIGHT_PAREN);
             } else {
                 lexerEngine.nextToken();
             }
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
     }
     
     protected abstract Keyword[] getCustomizedInsertKeywords();

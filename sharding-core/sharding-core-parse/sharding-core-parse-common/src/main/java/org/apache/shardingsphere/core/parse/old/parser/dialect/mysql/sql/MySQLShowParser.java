@@ -63,20 +63,20 @@ public final class MySQLShowParser extends AbstractShowParser {
     @Override
     public DALStatement parse() {
         lexerEngine.nextToken();
-        lexerEngine.skipIfEqual(DefaultKeyword.FULL);
-        if (lexerEngine.equalAny(MySQLKeyword.DATABASES)) {
+        lexerEngine.skipIfEqualType(DefaultKeyword.FULL);
+        if (lexerEngine.equalOne(MySQLKeyword.DATABASES)) {
             return showDatabases();
         }
         if (lexerEngine.skipIfEqual(DefaultKeyword.TABLE, MySQLKeyword.STATUS)) {
             return parseShowTableStatus();
         }
-        if (lexerEngine.skipIfEqual(MySQLKeyword.TABLES)) {
+        if (lexerEngine.skipIfEqualType(MySQLKeyword.TABLES)) {
             return parseShowTables();
         }
         if (lexerEngine.skipIfEqual(MySQLKeyword.COLUMNS, MySQLKeyword.FIELDS)) {
             return parseShowColumnsFields();
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.CREATE) && lexerEngine.skipIfEqual(DefaultKeyword.TABLE)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.CREATE) && lexerEngine.skipIfEqualType(DefaultKeyword.TABLE)) {
             return parseShowCreateTable();
         }
         if (lexerEngine.skipIfEqual(DefaultKeyword.INDEX, MySQLKeyword.INDEXES, MySQLKeyword.KEYS)) {
@@ -98,7 +98,7 @@ public final class MySQLShowParser extends AbstractShowParser {
             result.addSQLToken(new RemoveToken(beginPosition, lexerEngine.getCurrentToken().getEndPosition()));
             lexerEngine.nextToken();
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.LIKE)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.LIKE)) {
             parseLike(result);
         }
         return result;
@@ -112,7 +112,7 @@ public final class MySQLShowParser extends AbstractShowParser {
             result.addSQLToken(new RemoveToken(beginPosition, lexerEngine.getCurrentToken().getEndPosition()));
             lexerEngine.nextToken();
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.LIKE)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.LIKE)) {
             parseLike(result);
         }
         return result;

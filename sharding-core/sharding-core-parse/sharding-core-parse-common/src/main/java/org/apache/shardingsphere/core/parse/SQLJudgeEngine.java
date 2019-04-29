@@ -150,20 +150,20 @@ public final class SQLJudgeEngine {
     
     private SQLStatement getShowStatement(final LexerEngine lexerEngine) {
         lexerEngine.nextToken();
-        lexerEngine.skipIfEqual(DefaultKeyword.FULL);
-        if (lexerEngine.equalAny(MySQLKeyword.DATABASES)) {
+        lexerEngine.skipIfEqualType(DefaultKeyword.FULL);
+        if (lexerEngine.equalOne(MySQLKeyword.DATABASES)) {
             return new ShowDatabasesStatement();
         }
         if (lexerEngine.skipIfEqual(DefaultKeyword.TABLE, MySQLKeyword.STATUS)) {
             return parseShowTableStatus(lexerEngine);
         }
-        if (lexerEngine.skipIfEqual(MySQLKeyword.TABLES)) {
+        if (lexerEngine.skipIfEqualType(MySQLKeyword.TABLES)) {
             return parseShowTables(lexerEngine);
         }
         if (lexerEngine.skipIfEqual(MySQLKeyword.COLUMNS, MySQLKeyword.FIELDS)) {
             return parseShowColumnsFields(lexerEngine);
         }
-        if (lexerEngine.skipIfEqual(DefaultKeyword.CREATE) && lexerEngine.skipIfEqual(DefaultKeyword.TABLE)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.CREATE) && lexerEngine.skipIfEqualType(DefaultKeyword.TABLE)) {
             return parseShowCreateTable(lexerEngine);
         }
         if (lexerEngine.skipIfEqual(DefaultKeyword.INDEX, MySQLKeyword.INDEXES, MySQLKeyword.KEYS)) {
@@ -222,7 +222,7 @@ public final class SQLJudgeEngine {
     private void parseSingleTableWithSchema(final LexerEngine lexerEngine, final SQLStatement sqlStatement) {
         int beginPosition = lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length();
         lexerEngine.nextToken();
-        if (lexerEngine.skipIfEqual(Symbol.DOT)) {
+        if (lexerEngine.skipIfEqualType(Symbol.DOT)) {
             sqlStatement.addSQLToken(new SchemaToken(beginPosition, lexerEngine.getCurrentToken().getEndPosition() - 1, null));
             lexerEngine.nextToken();
         }

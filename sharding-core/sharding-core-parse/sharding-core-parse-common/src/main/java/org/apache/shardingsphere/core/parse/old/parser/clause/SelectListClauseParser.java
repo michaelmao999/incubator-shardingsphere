@@ -79,7 +79,7 @@ public abstract class SelectListClauseParser implements SQLClauseParser {
     public void parse(final SelectStatement selectStatement, final List<SelectItem> items) {
         do {
             selectStatement.getItems().addAll(parseSelectItems(selectStatement));
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
         selectStatement.setSelectListStopIndex(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length());
         items.addAll(selectStatement.getItems());
     }
@@ -132,7 +132,7 @@ public abstract class SelectListClauseParser implements SQLClauseParser {
     protected abstract SelectItem parseRowNumberSelectItem(SelectStatement selectStatement);
     
     private boolean isDistinctSelectItem() {
-        return lexerEngine.equalAny(DefaultKeyword.DISTINCT);
+        return lexerEngine.equalOne(DefaultKeyword.DISTINCT);
     }
     
     private SelectItem parseDistinctSelectItem(final SelectStatement selectStatement) {
@@ -169,16 +169,16 @@ public abstract class SelectListClauseParser implements SQLClauseParser {
         StringBuilder result = new StringBuilder();
         result.append(literals);
         lexerEngine.nextToken();
-        if (lexerEngine.equalAny(Symbol.LEFT_PAREN)) {
+        if (lexerEngine.equalOne(Symbol.LEFT_PAREN)) {
             result.append(lexerEngine.skipParentheses(selectStatement));
-        } else if (lexerEngine.equalAny(Symbol.DOT)) {
+        } else if (lexerEngine.equalOne(Symbol.DOT)) {
             String tableName = SQLUtil.getExactlyValue(literals);
             if (shardingRule.findTableRule(tableName).isPresent() || shardingRule.isBroadcastTable(tableName) || shardingRule.findBindingTableRule(tableName).isPresent()) {
                 selectStatement.addSQLToken(new TableToken(position, literals, QuoteCharacter.getQuoteCharacter(literals), 0));
             }
             result.append(lexerEngine.getCurrentToken().getLiterals());
             lexerEngine.nextToken();
-            if (lexerEngine.equalAny(Symbol.STAR)) {
+            if (lexerEngine.equalOne(Symbol.STAR)) {
                 return parseStarSelectItem(literals);
             }
             result.append(lexerEngine.getCurrentToken().getLiterals());

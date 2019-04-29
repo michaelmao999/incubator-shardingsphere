@@ -41,6 +41,6 @@ public final class PostgreSQLTableReferencesClauseParser extends TableReferences
     }
     
     private void parseOnly() {
-        getLexerEngine().skipIfEqual(PostgreSQLKeyword.ONLY);
+        getLexerEngine().skipIfEqualType(PostgreSQLKeyword.ONLY);
     }
 }

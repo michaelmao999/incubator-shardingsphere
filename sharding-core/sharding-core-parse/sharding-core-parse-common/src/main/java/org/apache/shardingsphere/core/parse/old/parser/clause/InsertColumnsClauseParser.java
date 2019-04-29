@@ -60,7 +60,7 @@ public final class InsertColumnsClauseParser implements SQLClauseParser {
      */
     public void parse(final InsertStatement insertStatement, final ShardingTableMetaData shardingTableMetaData) {
         String tableName = insertStatement.getTables().getSingleTableName();
-        insertStatement.getColumnNames().addAll(lexerEngine.equalAny(Symbol.LEFT_PAREN)
+        insertStatement.getColumnNames().addAll(lexerEngine.equalOne(Symbol.LEFT_PAREN)
                 ? parseWithColumn(insertStatement) : parseWithoutColumn(shardingTableMetaData, tableName));
     }
     
@@ -81,7 +81,7 @@ public final class InsertColumnsClauseParser implements SQLClauseParser {
             }
             Preconditions.checkNotNull(columnName);
             result.add(columnName);
-        } while (!lexerEngine.equalAny(Symbol.RIGHT_PAREN) && !lexerEngine.equalAny(Assist.END));
+        } while (!lexerEngine.equalOne(Symbol.RIGHT_PAREN) && !lexerEngine.equalOne(Assist.END));
         lexerEngine.nextToken();
         return result;
     }

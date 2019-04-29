@@ -64,27 +64,27 @@ public abstract class OrderByClauseParser implements SQLClauseParser {
      * @param selectStatement select statement
      */
     public final void parse(final SelectStatement selectStatement) {
-        if (!lexerEngine.skipIfEqual(DefaultKeyword.ORDER)) {
+        if (!lexerEngine.skipIfEqualType(DefaultKeyword.ORDER)) {
             return;
         }
         List<OrderItem> result = new LinkedList<>();
-        lexerEngine.skipIfEqual(OracleKeyword.SIBLINGS);
+        lexerEngine.skipIfEqualType(OracleKeyword.SIBLINGS);
         lexerEngine.accept(DefaultKeyword.BY);
         do {
             Optional<OrderItem> orderItem = parseSelectOrderByItem(selectStatement);
             if (orderItem.isPresent()) {
                 result.add(orderItem.get());
             }
-        } while (lexerEngine.skipIfEqual(Symbol.COMMA));
+        } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
         selectStatement.getOrderByItems().addAll(result);
     }
     
     private Optional<OrderItem> parseSelectOrderByItem(final SelectStatement selectStatement) {
         SQLExpression sqlExpression = basicExpressionParser.parse(selectStatement);
         OrderDirection orderDirection = OrderDirection.ASC;
-        if (lexerEngine.skipIfEqual(DefaultKeyword.ASC)) {
+        if (lexerEngine.skipIfEqualType(DefaultKeyword.ASC)) {
             orderDirection = OrderDirection.ASC;
-        } else if (lexerEngine.skipIfEqual(DefaultKeyword.DESC)) {
+        } else if (lexerEngine.skipIfEqualType(DefaultKeyword.DESC)) {
             orderDirection = OrderDirection.DESC;
         }
         if (sqlExpression instanceof SQLTextExpression) {

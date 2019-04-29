@@ -55,15 +55,15 @@ public final class SQLServerTopClauseParser implements SQLClauseParser {
      * @param selectStatement select statement
      */
     public void parse(final SelectStatement selectStatement) {
-        if (!lexerEngine.skipIfEqual(SQLServerKeyword.TOP)) {
+        if (!lexerEngine.skipIfEqualType(SQLServerKeyword.TOP)) {
             return;
         }
         int beginPosition = lexerEngine.getCurrentToken().getEndPosition();
-        if (!lexerEngine.skipIfEqual(Symbol.LEFT_PAREN)) {
+        if (!lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
             beginPosition = lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length();
         }
         SQLExpression sqlExpression = basicExpressionParser.parse(selectStatement);
-        lexerEngine.skipIfEqual(Symbol.RIGHT_PAREN);
+        lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
         LimitValue rowCountValue;
         if (sqlExpression instanceof SQLNumberExpression) {
             int rowCount = ((SQLNumberExpression) sqlExpression).getNumber().intValue();

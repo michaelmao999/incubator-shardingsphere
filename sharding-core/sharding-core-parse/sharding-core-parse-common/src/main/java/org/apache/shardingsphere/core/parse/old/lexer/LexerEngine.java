@@ -86,14 +86,14 @@ public final class LexerEngine {
      * @return skipped string
      */
     public String skipParentheses(final SQLStatement sqlStatement) {
-        StringBuilder result = new StringBuilder("");
+        StringBuilder result = new StringBuilder();
         int count = 0;
         if (Symbol.LEFT_PAREN == lexer.getCurrentToken().getType()) {
             final int beginPosition = lexer.getCurrentToken().getEndPosition();
             result.append(Symbol.LEFT_PAREN.getLiterals());
             lexer.nextToken();
             while (true) {
-                if (equalAny(Symbol.QUESTION)) {
+                if (equalOne(Symbol.QUESTION)) {
                     sqlStatement.setParametersIndex(sqlStatement.getParametersIndex() + 1);
                 }
                 if (Assist.END == lexer.getCurrentToken().getType() || (Symbol.RIGHT_PAREN == lexer.getCurrentToken().getType() && 0 == count)) {
@@ -138,7 +138,17 @@ public final class LexerEngine {
         }
         return false;
     }
-    
+
+    /**
+     * Judge current token equals one of input tokens or not.
+     *
+     * @param tokenType to be judged token type
+     * @return current token equals one of input tokens or not
+     */
+    public boolean equalOne(final TokenType tokenType) {
+        return tokenType == lexer.getCurrentToken().getType();
+    }
+
     /**
      * Skip current token if equals one of input tokens.
      *
@@ -152,7 +162,21 @@ public final class LexerEngine {
         }
         return false;
     }
-    
+
+    /**
+     * Skip current token if equals one of input tokens.
+     *
+     * @param tokenType to be judged token types
+     * @return skipped current token or not
+     */
+    public boolean skipIfEqualType(final TokenType tokenType) {
+        if (lexer.getCurrentToken().getType() == tokenType) {
+            lexer.nextToken();
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Skip all input tokens.
      *

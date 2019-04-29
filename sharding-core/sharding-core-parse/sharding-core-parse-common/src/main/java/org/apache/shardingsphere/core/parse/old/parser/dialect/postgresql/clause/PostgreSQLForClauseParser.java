@@ -37,11 +37,11 @@ public final class PostgreSQLForClauseParser implements SQLClauseParser {
      * Parse for.
      */
     public void parse() {
-        if (!lexerEngine.skipIfEqual(DefaultKeyword.FOR)) {
+        if (!lexerEngine.skipIfEqualType(DefaultKeyword.FOR)) {
             return;
         }
         lexerEngine.skipIfEqual(DefaultKeyword.UPDATE, PostgreSQLKeyword.SHARE);
         lexerEngine.unsupportedIfEqual(DefaultKeyword.OF);
-        lexerEngine.skipIfEqual(PostgreSQLKeyword.NOWAIT);
+        lexerEngine.skipIfEqualType(PostgreSQLKeyword.NOWAIT);
     }
 }

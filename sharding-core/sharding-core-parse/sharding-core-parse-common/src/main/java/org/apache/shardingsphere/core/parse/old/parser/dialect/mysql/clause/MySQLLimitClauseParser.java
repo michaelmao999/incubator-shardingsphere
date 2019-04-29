@@ -46,17 +46,17 @@ public final class MySQLLimitClauseParser implements SQLClauseParser {
      * @param selectStatement select statement
      */
     public void parse(final SelectStatement selectStatement) {
-        if (!lexerEngine.skipIfEqual(MySQLKeyword.LIMIT)) {
+        if (!lexerEngine.skipIfEqualType(MySQLKeyword.LIMIT)) {
             return;
         }
         int valueIndex = -1;
         int valueBeginPosition = lexerEngine.getCurrentToken().getEndPosition();
         int value;
         boolean isParameterForValue = false;
-        if (lexerEngine.equalAny(Literals.INT)) {
+        if (lexerEngine.equalOne(Literals.INT)) {
             value = Integer.parseInt(lexerEngine.getCurrentToken().getLiterals());
             valueBeginPosition = valueBeginPosition - (value + "").length();
-        } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+        } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
             valueIndex = selectStatement.getParametersIndex();
             value = -1;
             valueBeginPosition--;
@@ -65,11 +65,11 @@ public final class MySQLLimitClauseParser implements SQLClauseParser {
             throw new SQLParsingException(lexerEngine);
         }
         lexerEngine.nextToken();
-        if (lexerEngine.skipIfEqual(Symbol.COMMA)) {
+        if (lexerEngine.skipIfEqualType(Symbol.COMMA)) {
             selectStatement.setLimit(getLimitWithComma(valueIndex, valueBeginPosition, value, isParameterForValue, selectStatement));
             return;
         }
-        if (lexerEngine.skipIfEqual(MySQLKeyword.OFFSET)) {
+        if (lexerEngine.skipIfEqualType(MySQLKeyword.OFFSET)) {
             selectStatement.setLimit(getLimitWithOffset(valueIndex, valueBeginPosition, value, isParameterForValue, selectStatement));
             return;
         }
@@ -88,10 +88,10 @@ public final class MySQLLimitClauseParser implements SQLClauseParser {
         int rowCountValue;
         int rowCountIndex = -1;
         boolean isParameterForRowCount = false;
-        if (lexerEngine.equalAny(Literals.INT)) {
+        if (lexerEngine.equalOne(Literals.INT)) {
             rowCountValue = Integer.parseInt(lexerEngine.getCurrentToken().getLiterals());
             rowCountBeginPosition = rowCountBeginPosition - (rowCountValue + "").length();
-        } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+        } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
             rowCountIndex = -1 == index ? selectStatement.getParametersIndex() : index + 1;
             rowCountValue = -1;
             rowCountBeginPosition--;
@@ -121,10 +121,10 @@ public final class MySQLLimitClauseParser implements SQLClauseParser {
         int offsetValue = -1;
         int offsetIndex = -1;
         boolean isParameterForOffset = false;
-        if (lexerEngine.equalAny(Literals.INT)) {
+        if (lexerEngine.equalOne(Literals.INT)) {
             offsetValue = Integer.parseInt(lexerEngine.getCurrentToken().getLiterals());
             offsetBeginPosition = offsetBeginPosition - (offsetValue + "").length();
-        } else if (lexerEngine.equalAny(Symbol.QUESTION)) {
+        } else if (lexerEngine.equalOne(Symbol.QUESTION)) {
             offsetIndex = -1 == index ? selectStatement.getParametersIndex() : index + 1;
             offsetBeginPosition--;
             isParameterForOffset = true;
