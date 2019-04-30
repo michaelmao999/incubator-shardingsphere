@@ -10,19 +10,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OracleSQLFunctionExecutor extends AbstractSQLFunctionExecutor {
+public class OracleSQLFunctionExecutor implements SQLFunctionExector {
 
-    public OracleSQLFunctionExecutor(ShardingTableMetaData shardingTableMetaData) {
-        super(shardingTableMetaData);
-    }
 
     @Override
-    public Object compute(SQLFunctionExpression functionExpression) {
+    public Object compute(SQLFunctionExpression functionExpression, final List<Object> sqlparameters) {
         String function = functionExpression.getFunction();
         Object result = null;
         List<SQLExpression> parameters = functionExpression.getParameters();
         if ("to_date".equals(function)) {
-            Date dateObj = converToDate(parameters.get(0), parameters.get(1));
+            Date dateObj = converToDate(parameters.get(0), parameters.get(1), sqlparameters);
             functionExpression.setValue(dateObj);
             return dateObj;
         }
@@ -30,39 +27,47 @@ public class OracleSQLFunctionExecutor extends AbstractSQLFunctionExecutor {
     }
 
 
-    private static Date converToDate(SQLExpression date1, SQLExpression dateFormat) {
+    private static Date converToDate(SQLExpression date1, SQLExpression dateFormat, final List<Object> sqlparameters) {
         String date1String = null;
         if (date1 instanceof SQLIdentifierExpression) {
             date1String = ((SQLIdentifierExpression)date1).getName();
         } else if (date1 instanceof SQLTextExpression) {
             date1String = ((SQLTextExpression)date1).getText();
+        } else if (date1 instanceof SQLPlaceholderExpression) {
+            date1String = (String) sqlparameters.get(((SQLPlaceholderExpression) date1).getIndex());
         }
         String formatText = null;
         if (dateFormat instanceof SQLIdentifierExpression) {
             formatText = ((SQLIdentifierExpression)dateFormat).getName();
         } else if (dateFormat instanceof SQLTextExpression) {
             formatText = ((SQLTextExpression)dateFormat).getText();
+        } else if (dateFormat instanceof SQLPlaceholderExpression) {
+            formatText = (String) sqlparameters.get(((SQLPlaceholderExpression) dateFormat).getIndex());
         }
         if (date1String == null || formatText == null) {
             return null;
         }
+        Date result = null;
         try {
-            String dateValue = convertJavaDate(formatText, date1String);
-            if (dateValue != null) {
-                DateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                return isoDateFormat.parse(dateValue);
+            if (formatText.indexOf('-') > 0) {
+                result = convertJavaDate(formatText, date1String, "-");
+            } else if (formatText.indexOf('/') > 0) {
+                result = convertJavaDate(formatText, date1String, "/");
+            } else {
+                result = convertJavaDate(formatText, date1String);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return result;
     }
 
-    private static String convertJavaDate(String format, String date) {
+    private static Date convertJavaDate(String format, String date, String splitChar) throws java.text.ParseException {
         Map<String, String> ymd = new HashMap<String, String>();
-        if (format.indexOf('-') > 0) {
-            String[] formatArray = format.split("-");
-            String[] dateArray = date.split("-");
+        if (format.indexOf(splitChar) > 0) {
+            String[] formatArray = format.split(splitChar);
+            String[] dateArray = date.split(splitChar);
 
             int len = formatArray.length;
             for (int index = 0; index < len; index++) {
@@ -76,24 +81,41 @@ public class OracleSQLFunctionExecutor extends AbstractSQLFunctionExecutor {
             }
         }
         if (ymd.size() == 3) {
-            return ymd.get("year") + "-" + ymd.get("month") + "-" + ymd.get("day");
+            DateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            return isoDateFormat.parse(ymd.get("year") + "-" + ymd.get("month") + "-" + ymd.get("day"));
         }
         return null;
 
     }
 
-    public static void main(String[] argc) throws  Exception {
-        String date = "05-01-2019";
-        String format = "MM-DD-YYYY";
+    private static Date convertJavaDate(String format, String date) throws java.text.ParseException {
+        Map<String, StringBuilder> ymd = new HashMap<String, StringBuilder>();
+        int len = format.length();
+        for (int index = 0; index < len; index++) {
+            char data = format.charAt(index);
+            if (data == 'y' || data == 'Y') {
+                appendChar(date.charAt(index), ymd, "year");
+            }else if (data == 'm' || data == 'M') {
+                appendChar(date.charAt(index), ymd, "month");
+            }else if (data == 'd' || data == 'D') {
+                appendChar(date.charAt(index), ymd, "day");
+            }
+        }
+        if (ymd.size() == 3) {
+            DateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            return isoDateFormat.parse(ymd.get("year") + "-" + ymd.get("month") + "-" + ymd.get("day"));
+        }
+        return null;
 
-        SimpleDateFormat formatObj = new SimpleDateFormat(format);
-        System.out.println(formatObj.format(new Date()));
-        System.out.println(formatObj.parse(date));
+    }
 
-        DateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        System.out.println(isoDateFormat.format(new Date()));
-        System.out.println(isoDateFormat.parse("2019-05-01"));
-
+    private static void appendChar(char data, Map<String, StringBuilder> ymd, String key) {
+        StringBuilder builder = ymd.get(key);
+        if (builder == null) {
+            builder = new StringBuilder();
+            ymd.put(key, builder);
+        }
+        builder.append(data);
     }
 
 }

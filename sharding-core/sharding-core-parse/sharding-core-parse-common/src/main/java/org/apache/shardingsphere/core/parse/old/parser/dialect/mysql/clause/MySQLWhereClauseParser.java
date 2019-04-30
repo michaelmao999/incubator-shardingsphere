@@ -23,7 +23,6 @@ import org.apache.shardingsphere.core.parse.old.lexer.dialect.mysql.MySQLKeyword
 import org.apache.shardingsphere.core.parse.old.lexer.token.Keyword;
 import org.apache.shardingsphere.core.parse.old.parser.clause.WhereClauseParser;
 import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.SelectItem;
-import org.apache.shardingsphere.core.parse.old.parser.dialect.mysql.clause.expression.MySQLSQLFunctionExecutor;
 
 import java.util.List;
 
@@ -36,7 +35,6 @@ public final class MySQLWhereClauseParser extends WhereClauseParser {
     
     public MySQLWhereClauseParser(final LexerEngine lexerEngine) {
         super(DatabaseType.MySQL, lexerEngine);
-        setSqlFunctionExector(new MySQLSQLFunctionExecutor(null));
     }
     
     @Override

@@ -1,17 +1,15 @@
 package org.apache.shardingsphere.core.parse.old.parser.dialect.sqlserver.clause.expression;
 
-import org.apache.shardingsphere.core.metadata.table.ShardingTableMetaData;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExector;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.AbstractSQLFunctionExecutor;
 
-public class SQLServerSQLFunctionExecutor extends AbstractSQLFunctionExecutor {
+import java.util.List;
 
-    public SQLServerSQLFunctionExecutor(ShardingTableMetaData shardingTableMetaData) {
-        super(shardingTableMetaData);
-    }
+public class SQLServerSQLFunctionExecutor implements SQLFunctionExector {
+
 
     @Override
-    public Object compute(SQLFunctionExpression functionExpression) {
+    public Object compute(SQLFunctionExpression functionExpression, List<Object> parameters) {
         return null;
     }
 }

@@ -37,6 +37,8 @@ import org.apache.shardingsphere.core.parse.hook.ParsingHook;
 import org.apache.shardingsphere.core.parse.hook.SPIParsingHook;
 import org.apache.shardingsphere.core.parse.old.parser.context.limit.Limit;
 import org.apache.shardingsphere.core.parse.old.parser.context.limit.LimitValue;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExector;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExecutorFactory;
 import org.apache.shardingsphere.core.route.SQLRouteResult;
 import org.apache.shardingsphere.core.route.type.RoutingResult;
 import org.apache.shardingsphere.core.rule.BindingTableRule;
@@ -75,7 +77,14 @@ public final class ParsingSQLRouter implements ShardingRouter {
     public SQLStatement parse(final String logicSQL, final boolean useCache) {
         parsingHook.start(logicSQL);
         try {
-            SQLStatement result = new SQLParsingEngine(databaseType, logicSQL, shardingRule, shardingMetaData.getTable(), parsingResultCache).parse(useCache);
+            SQLStatement result = null;
+            if (useCache && parsingResultCache != null) {
+                result = parsingResultCache.getSQLStatement(logicSQL);
+            }
+            if (result == null) {
+                result = new SQLParsingEngine(databaseType, logicSQL, shardingRule, shardingMetaData.getTable(), parsingResultCache).parse(useCache);
+            }
+//            SQLStatement result = new SQLParsingEngine(databaseType, logicSQL, shardingRule, shardingMetaData.getTable(), parsingResultCache).parse(useCache, parameters);
             parsingHook.finishSuccess(result, shardingMetaData.getTable());
             return result;
             // CHECKSTYLE:OFF
@@ -91,7 +100,9 @@ public final class ParsingSQLRouter implements ShardingRouter {
         Optional<GeneratedKey> generatedKey = sqlStatement instanceof InsertStatement
                 ? GeneratedKey.getGenerateKey(shardingRule, parameters, (InsertStatement) sqlStatement) : Optional.<GeneratedKey>absent();
         SQLRouteResult result = new SQLRouteResult(sqlStatement, generatedKey.orNull());
-        OptimizeResult optimizeResult = OptimizeEngineFactory.newInstance(shardingRule, sqlStatement, parameters, generatedKey.orNull()).optimize();
+        SQLFunctionExector sqlFunctionExector = SQLFunctionExecutorFactory.newInstance(databaseType);
+        OptimizeResult optimizeResult = OptimizeEngineFactory.newInstance(shardingRule, sqlStatement, parameters, generatedKey.orNull(), sqlFunctionExector)
+                .optimize();
         if (generatedKey.isPresent()) {
             setGeneratedKeys(result, generatedKey.get());
         }

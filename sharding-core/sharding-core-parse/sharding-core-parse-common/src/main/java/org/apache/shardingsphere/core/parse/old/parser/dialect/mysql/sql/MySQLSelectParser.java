@@ -23,9 +23,9 @@ import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.parser.dialect.mysql.clause.MySQLLimitClauseParser;
 import org.apache.shardingsphere.core.parse.old.parser.dialect.mysql.clause.MySQLSelectOptionClauseParser;
 import org.apache.shardingsphere.core.parse.old.parser.dialect.mysql.clause.facade.MySQLSelectClauseParserFacade;
-import org.apache.shardingsphere.core.parse.old.parser.dialect.oracle.clause.expression.OracleSQLFunctionExecutor;
 import org.apache.shardingsphere.core.parse.old.parser.sql.dml.select.AbstractSelectParser;
 import org.apache.shardingsphere.core.rule.ShardingRule;
+
 
 /**
  * Select parser for MySQL.
@@ -43,7 +43,6 @@ public final class MySQLSelectParser extends AbstractSelectParser {
         super(shardingRule, lexerEngine, new MySQLSelectClauseParserFacade(shardingRule, lexerEngine), shardingTableMetaData);
         selectOptionClauseParser = new MySQLSelectOptionClauseParser(lexerEngine);
         limitClauseParser = new MySQLLimitClauseParser(lexerEngine);
-
     }
     
     @Override

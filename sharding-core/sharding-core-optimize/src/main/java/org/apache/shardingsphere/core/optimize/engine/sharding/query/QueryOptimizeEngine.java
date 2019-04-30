@@ -30,6 +30,8 @@ import org.apache.shardingsphere.core.parse.old.parser.context.condition.AndCond
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.Column;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.Condition;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.OrCondition;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExector;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExpression;
 import org.apache.shardingsphere.core.strategy.route.value.BetweenRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.ListRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.RouteValue;
@@ -51,6 +53,8 @@ public final class QueryOptimizeEngine implements OptimizeEngine {
     private final OrCondition orCondition;
     
     private final List<Object> parameters;
+
+    private final SQLFunctionExector sqlFunctionExector;
     
     @Override
     public OptimizeResult optimize() {
@@ -82,6 +86,9 @@ public final class QueryOptimizeEngine implements OptimizeEngine {
         Range<Comparable<?>> rangeValue = null;
         for (Condition each : conditions) {
             List<Comparable<?>> conditionValues = each.getConditionValues(parameters);
+            if (!each.getPositionExpressionMap().isEmpty()) {
+                conditionValues = computeConditionValues(conditionValues, each.getPositionExpressionMap(), parameters);
+            }
             if (ShardingOperator.EQUAL == each.getOperator() || ShardingOperator.IN == each.getOperator()) {
                 listValue = optimize(conditionValues, listValue);
                 if (listValue.isEmpty()) {
@@ -105,7 +112,23 @@ public final class QueryOptimizeEngine implements OptimizeEngine {
         listValue = optimize(listValue, rangeValue);
         return listValue.isEmpty() ? new AlwaysFalseShardingValue() : new ListRouteValue<>(column.getName(), column.getTableName(), listValue);
     }
-    
+
+    private List<Comparable<?>> computeConditionValues(List<Comparable<?>> result, Map<Integer, SQLFunctionExpression> positionExpressionMap, final List<Object> parameters) {
+        for (Entry<Integer, SQLFunctionExpression> entry : positionExpressionMap.entrySet()) {
+            Object parameter = sqlFunctionExector.compute(entry.getValue(), parameters);
+            if (!(parameter instanceof Comparable<?>)) {
+                throw new ShardingException("Parameter `%s` should extends Comparable for sharding value.", parameter);
+            }
+            if (entry.getKey() < result.size()) {
+                result.add(entry.getKey(), (Comparable<?>) parameter);
+            } else {
+                result.add((Comparable<?>) parameter);
+            }
+        }
+        return result;
+    }
+
+
     private List<Comparable<?>> optimize(final List<Comparable<?>> value1, final List<Comparable<?>> value2) {
         if (null == value2) {
             return value1;

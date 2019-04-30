@@ -28,6 +28,7 @@ import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DMLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.InsertStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExector;
 import org.apache.shardingsphere.core.rule.EncryptRule;
 import org.apache.shardingsphere.core.rule.ShardingRule;
 
@@ -52,15 +53,15 @@ public final class OptimizeEngineFactory {
      * @param generatedKey generated key
      * @return optimize engine instance
      */
-    public static OptimizeEngine newInstance(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<Object> parameters, final GeneratedKey generatedKey) {
+    public static OptimizeEngine newInstance(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<Object> parameters, final GeneratedKey generatedKey, final SQLFunctionExector sqlFunctionExector) {
         if (sqlStatement instanceof InsertStatement) {
-            return new InsertOptimizeEngine(shardingRule, (InsertStatement) sqlStatement, parameters, generatedKey);
+            return new InsertOptimizeEngine(shardingRule, (InsertStatement) sqlStatement, parameters, generatedKey, sqlFunctionExector);
         }
         if (sqlStatement instanceof SelectStatement || sqlStatement instanceof DMLStatement) {
-            return new QueryOptimizeEngine(sqlStatement.getRouteConditions().getOrCondition(), parameters);
+            return new QueryOptimizeEngine(sqlStatement.getRouteConditions().getOrCondition(), parameters, sqlFunctionExector);
         }
         // TODO do with DDL and DAL
-        return new QueryOptimizeEngine(sqlStatement.getRouteConditions().getOrCondition(), parameters);
+        return new QueryOptimizeEngine(sqlStatement.getRouteConditions().getOrCondition(), parameters, sqlFunctionExector);
     }
     
     /**

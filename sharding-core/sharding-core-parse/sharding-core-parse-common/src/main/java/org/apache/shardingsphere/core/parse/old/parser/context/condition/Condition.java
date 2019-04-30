@@ -54,6 +54,8 @@ public class Condition {
     private String compareOperator;
     
     private final Map<Integer, Comparable<?>> positionValueMap = new LinkedHashMap<>();
+
+    private final Map<Integer, SQLFunctionExpression> positionExpressionMap = new LinkedHashMap<>();
     
     private final Map<Integer, Integer> positionIndexMap = new LinkedHashMap<>();
     
@@ -101,7 +103,9 @@ public class Condition {
         } else if (sqlExpression instanceof SQLNumberExpression) {
             positionValueMap.put(position, (Comparable) ((SQLNumberExpression) sqlExpression).getNumber());
         } else if (sqlExpression instanceof SQLFunctionExpression) {
-            positionValueMap.put(position, (Comparable)((SQLFunctionExpression) sqlExpression).getValue());
+            //postpone computing.
+            positionExpressionMap.put(position, (SQLFunctionExpression) sqlExpression);
+//            positionValueMap.put(position, (Comparable)((SQLFunctionExpression) sqlExpression).getValue());
         }
     }
     

@@ -237,7 +237,7 @@ public final class InsertOptimizeEngineTest {
         GeneratedKey generatedKey = new GeneratedKey("order_id");
         generatedKey.getGeneratedKeys().add(1);
         generatedKey.getGeneratedKeys().add(2);
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithPlaceHolder, insertValuesParameters, generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithPlaceHolder, insertValuesParameters, generatedKey, null).optimize();
         assertFalse(actual.getShardingConditions().isAlwaysFalse());
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(2));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
@@ -264,7 +264,7 @@ public final class InsertOptimizeEngineTest {
         GeneratedKey generatedKey = new GeneratedKey("order_id");
         generatedKey.getGeneratedKeys().add(1);
         generatedKey.getGeneratedKeys().add(2);
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithPlaceHolderWithEncrypt, insertValuesParameters, generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithPlaceHolderWithEncrypt, insertValuesParameters, generatedKey, null).optimize();
         assertFalse(actual.getShardingConditions().isAlwaysFalse());
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(2));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
@@ -290,7 +290,7 @@ public final class InsertOptimizeEngineTest {
         GeneratedKey generatedKey = new GeneratedKey("order_id");
         generatedKey.getGeneratedKeys().add(1);
         generatedKey.getGeneratedKeys().add(1);
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithPlaceHolder, insertValuesParameters, generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithPlaceHolder, insertValuesParameters, generatedKey, null).optimize();
         assertFalse(actual.getShardingConditions().isAlwaysFalse());
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(2));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
@@ -315,7 +315,7 @@ public final class InsertOptimizeEngineTest {
         insertValuesStatementWithoutPlaceHolderWithQueryEncrypt.getColumnNames().add("user_id");
         insertValuesStatementWithoutPlaceHolderWithQueryEncrypt.getColumnNames().add("status");
         insertValuesStatementWithoutPlaceHolderWithQueryEncrypt.getValues().add(new InsertValue(Arrays.asList(new SQLNumberExpression(12), new SQLTextExpression("a"))));
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithoutPlaceHolderWithQueryEncrypt, Collections.emptyList(), generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithoutPlaceHolderWithQueryEncrypt, Collections.emptyList(), generatedKey, null).optimize();
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(1));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
         assertThat(actual.getInsertOptimizeResult().get().getUnits().get(0).getParameters().length, is(0));
@@ -331,7 +331,7 @@ public final class InsertOptimizeEngineTest {
         insertValuesStatementWithoutPlaceHolder.getColumnNames().add("user_id");
         insertValuesStatementWithoutPlaceHolder.getColumnNames().add("status");
         insertValuesStatementWithoutPlaceHolder.getValues().add(new InsertValue(Arrays.asList(new SQLNumberExpression(12), new SQLTextExpression("a"))));
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithoutPlaceHolder, Collections.emptyList(), generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertValuesStatementWithoutPlaceHolder, Collections.emptyList(), generatedKey, null).optimize();
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(1));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
         assertThat(actual.getInsertOptimizeResult().get().getUnits().get(0).getParameters().length, is(0));
@@ -345,7 +345,7 @@ public final class InsertOptimizeEngineTest {
         GeneratedKey generatedKey = new GeneratedKey("order_id");
         generatedKey.getGeneratedKeys().add(1);
         insertSetStatementWithPlaceHolder.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLPlaceholderExpression(0), new SQLPlaceholderExpression(1))));
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithPlaceHolder, insertSetParameters, generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithPlaceHolder, insertSetParameters, generatedKey, null).optimize();
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(1));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
         assertThat(actual.getInsertOptimizeResult().get().getUnits().get(0).getParameters().length, is(3));
@@ -362,7 +362,7 @@ public final class InsertOptimizeEngineTest {
         generatedKey.getGeneratedKeys().add(1);
         InsertValue insertValue = new InsertValue(Arrays.<SQLExpression>asList(new SQLPlaceholderExpression(0), new SQLPlaceholderExpression(1)));
         insertSetStatementWithPlaceHolderWithQueryEncrypt.getValues().add(insertValue);
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithPlaceHolderWithQueryEncrypt, insertSetParameters, generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithPlaceHolderWithQueryEncrypt, insertSetParameters, generatedKey, null).optimize();
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(1));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
         assertThat(actual.getInsertOptimizeResult().get().getUnits().get(0).getParameters().length, is(4));
@@ -380,7 +380,7 @@ public final class InsertOptimizeEngineTest {
         GeneratedKey generatedKey = new GeneratedKey("order_id");
         generatedKey.getGeneratedKeys().add(1);
         insertSetStatementWithoutPlaceHolder.getValues().add(new InsertValue(Arrays.asList(new SQLNumberExpression(12), new SQLTextExpression("a"))));
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithoutPlaceHolder, Collections.emptyList(), generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithoutPlaceHolder, Collections.emptyList(), generatedKey, null).optimize();
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(1));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
         assertThat(actual.getInsertOptimizeResult().get().getUnits().get(0).getParameters().length, is(0));
@@ -394,7 +394,7 @@ public final class InsertOptimizeEngineTest {
         GeneratedKey generatedKey = new GeneratedKey("order_id");
         generatedKey.getGeneratedKeys().add(1);
         insertSetStatementWithoutPlaceHolderWithEncrypt.getValues().add(new InsertValue(Arrays.asList(new SQLNumberExpression(12), new SQLTextExpression("a"))));
-        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithoutPlaceHolderWithEncrypt, Collections.emptyList(), generatedKey).optimize();
+        OptimizeResult actual = new InsertOptimizeEngine(shardingRule, insertSetStatementWithoutPlaceHolderWithEncrypt, Collections.emptyList(), generatedKey, null).optimize();
         assertThat(actual.getShardingConditions().getShardingConditions().size(), is(1));
         assertTrue(actual.getInsertOptimizeResult().isPresent());
         assertThat(actual.getInsertOptimizeResult().get().getUnits().get(0).getParameters().length, is(0));

@@ -1,7 +1,7 @@
 package org.apache.shardingsphere.core.parse.old.parser.expression;
 
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExpression;
+import java.util.List;
 
 public interface SQLFunctionExector {
-    Object compute(SQLFunctionExpression functionExpression);
+    Object compute(SQLFunctionExpression functionExpression, final List<Object> parameters);
 }

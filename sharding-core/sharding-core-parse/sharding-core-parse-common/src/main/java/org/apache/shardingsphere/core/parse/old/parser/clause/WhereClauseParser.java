@@ -64,21 +64,11 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     
     private final BasicExpressionParser basicExpressionParser;
 
-    private SQLFunctionExector sqlFunctionExector;
-    
     public WhereClauseParser(final DatabaseType databaseType, final LexerEngine lexerEngine) {
         this.databaseType = databaseType;
         this.lexerEngine = lexerEngine;
         aliasExpressionParser = ExpressionParserFactory.createAliasExpressionParser(lexerEngine);
         basicExpressionParser = ExpressionParserFactory.createBasicExpressionParser(lexerEngine);
-    }
-
-    public SQLFunctionExector getSqlFunctionExector() {
-        return sqlFunctionExector;
-    }
-
-    public void setSqlFunctionExector(SQLFunctionExector sqlFunctionExector) {
-        this.sqlFunctionExector = sqlFunctionExector;
     }
 
     /**
@@ -271,10 +261,6 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         if (!hasComplexExpression) {
             Optional<Column> column = find(sqlStatement.getTables(), left);
             if (column.isPresent() && shardingRule.isShardingColumn(column.get().getName(), column.get().getTableName())) {
-                if (sqlFunctionExector != null) {
-                    sqlFunctionExector.compute((SQLFunctionExpression)right1);
-                    sqlFunctionExector.compute((SQLFunctionExpression)right2);
-                }
                 return new Condition(column.get(), right1, right2);
             }
         }

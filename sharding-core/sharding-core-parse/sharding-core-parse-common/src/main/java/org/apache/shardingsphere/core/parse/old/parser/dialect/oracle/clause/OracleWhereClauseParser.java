@@ -23,7 +23,6 @@ import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Keyword;
 import org.apache.shardingsphere.core.parse.old.parser.clause.WhereClauseParser;
 import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.SelectItem;
-import org.apache.shardingsphere.core.parse.old.parser.dialect.oracle.clause.expression.OracleSQLFunctionExecutor;
 
 import java.util.List;
 
@@ -36,7 +35,6 @@ public final class OracleWhereClauseParser extends WhereClauseParser {
     
     public OracleWhereClauseParser(final LexerEngine lexerEngine) {
         super(DatabaseType.Oracle, lexerEngine);
-        setSqlFunctionExector(new OracleSQLFunctionExecutor(null));
     }
     
     @Override
