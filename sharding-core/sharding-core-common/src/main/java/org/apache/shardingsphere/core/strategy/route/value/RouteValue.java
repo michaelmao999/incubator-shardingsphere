@@ -22,7 +22,7 @@ package org.apache.shardingsphere.core.strategy.route.value;
  * 
  * @author zhangliang
  */
-public interface RouteValue {
+public interface RouteValue extends RouteValueCondition{
     
     /**
      * Get column name.

@@ -21,6 +21,7 @@ import com.google.common.base.Optional;
 import org.apache.shardingsphere.core.constant.SQLType;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.SQLToken;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.Conditions;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.Group;
 import org.apache.shardingsphere.core.parse.old.parser.context.table.Tables;
 
 import java.util.List;
@@ -52,6 +53,8 @@ public interface SQLStatement {
      * @return conditions
      */
     Conditions getRouteConditions();
+
+    Group getRouteCondition();
     
     /**
      * Get encrypt conditions.

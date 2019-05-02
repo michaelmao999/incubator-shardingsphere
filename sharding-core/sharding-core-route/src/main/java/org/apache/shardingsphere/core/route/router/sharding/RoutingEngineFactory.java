@@ -32,12 +32,15 @@ import org.apache.shardingsphere.core.route.type.RoutingEngine;
 import org.apache.shardingsphere.core.route.type.broadcast.DatabaseBroadcastRoutingEngine;
 import org.apache.shardingsphere.core.route.type.broadcast.InstanceBroadcastRoutingEngine;
 import org.apache.shardingsphere.core.route.type.broadcast.TableBroadcastRoutingEngine;
+import org.apache.shardingsphere.core.route.type.complex.ComplexExpressionRoutingEngine;
 import org.apache.shardingsphere.core.route.type.complex.ComplexRoutingEngine;
 import org.apache.shardingsphere.core.route.type.defaultdb.DefaultDatabaseRoutingEngine;
 import org.apache.shardingsphere.core.route.type.ignore.IgnoreRoutingEngine;
+import org.apache.shardingsphere.core.route.type.standard.StandardExpressionRoutingEngine;
 import org.apache.shardingsphere.core.route.type.standard.StandardRoutingEngine;
 import org.apache.shardingsphere.core.route.type.unicast.UnicastRoutingEngine;
 import org.apache.shardingsphere.core.rule.ShardingRule;
+import org.apache.shardingsphere.core.strategy.route.value.GroupRouteValue;
 
 import java.util.Collection;
 
@@ -89,7 +92,48 @@ public final class RoutingEngineFactory {
         // TODO config for cartesian set
         return new ComplexRoutingEngine(sqlStatement, shardingRule, tableNames, optimizeResult);
     }
-    
+
+    /**
+     * Create new instance of routing engine.
+     *
+     * @param shardingRule sharding rule
+     * @param shardingDataSourceMetaData sharding data source meta data
+     * @param sqlStatement sql statement
+     * @param groupCondition optimize result
+     * @return new instance of routing engine
+     */
+    public static RoutingEngine newInstance2(final ShardingRule shardingRule,
+                                            final ShardingDataSourceMetaData shardingDataSourceMetaData, final SQLStatement sqlStatement, final GroupRouteValue groupCondition) {
+        Collection<String> tableNames = sqlStatement.getTables().getTableNames();
+        if (SQLType.TCL == sqlStatement.getType()) {
+            return new DatabaseBroadcastRoutingEngine(shardingRule);
+        }
+        if (SQLType.DDL == sqlStatement.getType()) {
+            return new TableBroadcastRoutingEngine(shardingRule, sqlStatement);
+        }
+        if (SQLType.DAL == sqlStatement.getType()) {
+            return getDALRoutingEngine(shardingRule, sqlStatement, tableNames);
+        }
+        if (SQLType.DCL == sqlStatement.getType()) {
+            return getDCLRoutingEngine(shardingRule, sqlStatement, shardingDataSourceMetaData);
+        }
+        if (shardingRule.isAllInDefaultDataSource(tableNames)) {
+            return new DefaultDatabaseRoutingEngine(shardingRule, tableNames);
+        }
+        if (shardingRule.isAllBroadcastTables(tableNames)) {
+            return SQLType.DQL == sqlStatement.getType() ? new UnicastRoutingEngine(shardingRule, tableNames) : new DatabaseBroadcastRoutingEngine(shardingRule);
+        }
+        if (groupCondition.isAlwaysFalse() || tableNames.isEmpty()) {
+            return new UnicastRoutingEngine(shardingRule, tableNames);
+        }
+        Collection<String> shardingTableNames = shardingRule.getShardingLogicTableNames(tableNames);
+        if (1 == shardingTableNames.size() || shardingRule.isAllBindingTables(shardingTableNames)) {
+            return new StandardExpressionRoutingEngine(sqlStatement, shardingRule, shardingTableNames.iterator().next(), groupCondition);
+        }
+        // TODO config for cartesian set
+        return new ComplexExpressionRoutingEngine(sqlStatement, shardingRule, tableNames, groupCondition);
+    }
+
     private static RoutingEngine getDALRoutingEngine(final ShardingRule shardingRule, final SQLStatement sqlStatement, final Collection<String> tableNames) {
         if (sqlStatement instanceof ShowDatabasesStatement || sqlStatement instanceof UseStatement) {
             return new IgnoreRoutingEngine();

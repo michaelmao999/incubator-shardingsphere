@@ -25,4 +25,9 @@ import org.apache.shardingsphere.core.parse.old.parser.context.condition.Conditi
  * @author maxiaoguang
  */
 public final class NullCondition extends Condition {
+    public static NullCondition instance = new NullCondition();
+
+    public String toString() {
+        return "NullCondition";
+    }
 }

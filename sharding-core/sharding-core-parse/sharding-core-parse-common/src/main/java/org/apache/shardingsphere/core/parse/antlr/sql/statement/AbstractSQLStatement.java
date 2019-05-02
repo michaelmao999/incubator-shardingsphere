@@ -26,6 +26,7 @@ import lombok.ToString;
 import org.apache.shardingsphere.core.constant.SQLType;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.SQLToken;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.Conditions;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.Group;
 import org.apache.shardingsphere.core.parse.old.parser.context.table.Tables;
 
 import java.util.Collections;
@@ -49,6 +50,8 @@ public abstract class AbstractSQLStatement implements SQLStatement {
     private final Tables tables = new Tables();
     
     private final Conditions routeConditions = new Conditions();
+
+    private final Group routeCondition = new Group();
     
     private final Conditions encryptConditions = new Conditions();
     
@@ -79,5 +82,10 @@ public abstract class AbstractSQLStatement implements SQLStatement {
     public final List<SQLToken> getSQLTokens() {
         Collections.sort(sqlTokens);
         return sqlTokens;
+    }
+
+    @Override
+    public Group getRouteCondition() {
+        return this.routeCondition;
     }
 }

@@ -44,6 +44,7 @@ import org.apache.shardingsphere.core.route.type.RoutingResult;
 import org.apache.shardingsphere.core.rule.BindingTableRule;
 import org.apache.shardingsphere.core.rule.ShardingRule;
 import org.apache.shardingsphere.core.rule.TableRule;
+import org.apache.shardingsphere.core.strategy.route.value.GroupRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.ListRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.RouteValue;
 
@@ -101,20 +102,34 @@ public final class ParsingSQLRouter implements ShardingRouter {
                 ? GeneratedKey.getGenerateKey(shardingRule, parameters, (InsertStatement) sqlStatement) : Optional.<GeneratedKey>absent();
         SQLRouteResult result = new SQLRouteResult(sqlStatement, generatedKey.orNull());
         SQLFunctionExector sqlFunctionExector = SQLFunctionExecutorFactory.newInstance(databaseType);
-        OptimizeResult optimizeResult = OptimizeEngineFactory.newInstance(shardingRule, sqlStatement, parameters, generatedKey.orNull(), sqlFunctionExector)
-                .optimize();
+        OptimizeResult optimizeResult = null;
+        GroupRouteValue groupCondition = null;
+        if (sqlStatement instanceof InsertStatement) {
+            optimizeResult = OptimizeEngineFactory.newInstance(shardingRule, sqlStatement, parameters, generatedKey.orNull(), sqlFunctionExector)
+                    .optimize();
+        } else {
+            groupCondition = OptimizeEngineFactory.newInstance2(shardingRule, sqlStatement, parameters, generatedKey.orNull(), sqlFunctionExector)
+                    .optimize();
+        }
         if (generatedKey.isPresent()) {
             setGeneratedKeys(result, generatedKey.get());
         }
         boolean needMerge = false;
-        if (sqlStatement instanceof SelectStatement) {
+        if (sqlStatement instanceof SelectStatement && groupCondition == null) {
             needMerge = isNeedMergeShardingValues((SelectStatement) sqlStatement);
         }
-        if (needMerge) {
+        if (needMerge && groupCondition == null) {
             checkSubqueryShardingValues(sqlStatement, optimizeResult.getShardingConditions());
             mergeShardingValues(optimizeResult.getShardingConditions());
         }
-        RoutingResult routingResult = RoutingEngineFactory.newInstance(shardingRule, shardingMetaData.getDataSource(), sqlStatement, optimizeResult).route();
+        RoutingResult routingResult = null;
+        if (groupCondition == null) {
+            routingResult = RoutingEngineFactory.newInstance(shardingRule, shardingMetaData.getDataSource(), sqlStatement, optimizeResult)
+                    .route();
+        } else {
+            routingResult = RoutingEngineFactory.newInstance2(shardingRule, shardingMetaData.getDataSource(), sqlStatement, groupCondition)
+                    .route();
+        }
         if (sqlStatement instanceof SelectStatement && null != ((SelectStatement) sqlStatement).getLimit() && !routingResult.isSingleRouting()) {
             result.setLimit(getProcessedLimit(parameters, (SelectStatement) sqlStatement));
         }

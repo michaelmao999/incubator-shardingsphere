@@ -24,16 +24,11 @@ import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatem
 import org.apache.shardingsphere.core.parse.antlr.sql.token.OffsetToken;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.RowCountToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
-import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
-import org.apache.shardingsphere.core.parse.old.lexer.token.Keyword;
-import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
+import org.apache.shardingsphere.core.parse.old.lexer.token.*;
 import org.apache.shardingsphere.core.parse.old.parser.clause.condition.NullCondition;
 import org.apache.shardingsphere.core.parse.old.parser.clause.expression.AliasExpressionParser;
 import org.apache.shardingsphere.core.parse.old.parser.clause.expression.BasicExpressionParser;
-import org.apache.shardingsphere.core.parse.old.parser.context.condition.AndCondition;
-import org.apache.shardingsphere.core.parse.old.parser.context.condition.Column;
-import org.apache.shardingsphere.core.parse.old.parser.context.condition.Condition;
-import org.apache.shardingsphere.core.parse.old.parser.context.condition.OrCondition;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.*;
 import org.apache.shardingsphere.core.parse.old.parser.context.limit.Limit;
 import org.apache.shardingsphere.core.parse.old.parser.context.limit.LimitValue;
 import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.SelectItem;
@@ -81,7 +76,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     public void parse(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
         aliasExpressionParser.parseTableAlias();
         if (lexerEngine.skipIfEqualType(DefaultKeyword.WHERE)) {
-            parseWhere(shardingRule, sqlStatement, items);
+            parseWhere2(shardingRule, sqlStatement, items);
         }
     }
     
@@ -91,6 +86,50 @@ public abstract class WhereClauseParser implements SQLClauseParser {
             sqlStatement.getRouteConditions().getOrCondition().getAndConditions().addAll(orCondition.getAndConditions());
         }
     }
+
+    private void parseWhere2(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
+        Group group = parseGroup(shardingRule, sqlStatement, items, false)
+                .optimize();
+        if (group.size() > 0) {
+            sqlStatement.getRouteCondition().add(group);
+        }
+
+//        if (1 != orCondition.getAndConditions().size() || !(orCondition.getAndConditions().get(0).getConditions().get(0) instanceof NullCondition)) {
+//            sqlStatement.getRouteConditions().getOrCondition().getAndConditions().addAll(orCondition.getAndConditions());
+//        }
+    }
+
+
+    private Group parseGroup(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items, boolean isSubGroup) {
+        Group result = new Group();
+        do {
+            if (lexerEngine.isEnd()) {
+                break;
+            }
+            TokenType tokenType = lexerEngine.getCurrentToken().getType();
+            if (tokenType == DefaultKeyword.GROUP || tokenType == DefaultKeyword.ORDER
+                    || tokenType == DefaultKeyword.UNION || tokenType == DefaultKeyword.MINUS
+                    || (isSubGroup && tokenType == Symbol.RIGHT_PAREN)
+            ) {
+                break;
+            }
+            if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
+                Group subOrCondition = parseGroup(shardingRule, sqlStatement, items, true);
+                lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
+                result.add(subOrCondition);
+            } else if (lexerEngine.skipIfEqualType(DefaultKeyword.OR)){
+                result.add(Or.instance);
+            } else if (lexerEngine.skipIfEqualType(DefaultKeyword.AND)){
+                result.add(And.instance);
+            } else {
+                Condition condition = parseComparisonCondition(shardingRule, sqlStatement, items);
+                result.add(condition);
+                skipsDoubleColon();
+            }
+        } while (true);
+        return result;
+    }
+
     
     private OrCondition parseOr(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
         OrCondition result = new OrCondition();
@@ -158,7 +197,23 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         Condition result;
         SQLExpression left = basicExpressionParser.parse(sqlStatement);
         if (lexerEngine.skipIfEqualType(Symbol.EQ)) {
-            result = parseEqualCondition(shardingRule, sqlStatement, left);
+            result = parseEqualCondition(shardingRule, sqlStatement, left, Symbol.EQ);
+            return result;
+        }
+        if (lexerEngine.skipIfEqualType(Symbol.GT)) {
+            result = parseEqualCondition(shardingRule, sqlStatement, left, Symbol.GT);
+            return result;
+        }
+        if (lexerEngine.skipIfEqualType(Symbol.LT)) {
+            result = parseEqualCondition(shardingRule, sqlStatement, left, Symbol.LT);
+            return result;
+        }
+        if (lexerEngine.skipIfEqualType(Symbol.GT_EQ)) {
+            result = parseEqualCondition(shardingRule, sqlStatement, left, Symbol.GT_EQ);
+            return result;
+        }
+        if (lexerEngine.skipIfEqualType(Symbol.LT_EQ)) {
+            result = parseEqualCondition(shardingRule, sqlStatement, left, Symbol.LT_EQ);
             return result;
         }
         if (lexerEngine.skipIfEqualType(DefaultKeyword.IN)) {
@@ -169,7 +224,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
             result = parseBetweenCondition(shardingRule, sqlStatement, left);
             return result;
         }
-        result = new NullCondition();
+        result = NullCondition.instance;
         if (sqlStatement instanceof SelectStatement && isRowNumberCondition(items, left)) {
             if (lexerEngine.skipIfEqualType(Symbol.LT)) {
                 parseRowCountCondition((SelectStatement) sqlStatement, false);
@@ -201,19 +256,19 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         return result;
     }
     
-    private Condition parseEqualCondition(final ShardingRule shardingRule, final SQLStatement sqlStatement, final SQLExpression left) {
+    private Condition parseEqualCondition(final ShardingRule shardingRule, final SQLStatement sqlStatement, final SQLExpression left, final Symbol operator) {
         SQLExpression right = basicExpressionParser.parse(sqlStatement);
         // TODO if have more tables, and cannot find column belong to, should not add to condition, should parse binding table rule.
         if (!sqlStatement.getTables().isSingleTable() && !(left instanceof SQLPropertyExpression)) {
-            return new NullCondition();
+            return NullCondition.instance;
         }
-        if (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression) {
+        if (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression || right instanceof  SQLFunctionExpression) {
             Optional<Column> column = find(sqlStatement.getTables(), left);
             if (column.isPresent() && shardingRule.isShardingColumn(column.get().getName(), column.get().getTableName())) {
-                return new Condition(column.get(), right);
+                return new Condition(column.get(), operator.getLiterals(), right);
             }
         }
-        return new NullCondition();
+        return NullCondition.instance;
     }
     
     private Condition parseInCondition(final ShardingRule shardingRule, final SQLStatement sqlStatement, final SQLExpression left) {

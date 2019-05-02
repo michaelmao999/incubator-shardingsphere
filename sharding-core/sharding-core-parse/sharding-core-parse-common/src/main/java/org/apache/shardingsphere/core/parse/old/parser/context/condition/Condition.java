@@ -44,7 +44,7 @@ import java.util.Map.Entry;
 @Getter
 @EqualsAndHashCode
 @ToString
-public class Condition {
+public class Condition implements  SQLCondition{
     
     private final Column column;
     
@@ -74,6 +74,14 @@ public class Condition {
         this.compareOperator = compareOperator;
         if (Symbol.EQ.getLiterals().equals(compareOperator)) {
             operator = ShardingOperator.EQUAL;
+        } else if (Symbol.GT.getLiterals().equals(compareOperator)) {
+            operator = ShardingOperator.GT;
+        } else if (Symbol.LT.getLiterals().equals(compareOperator)) {
+            operator = ShardingOperator.LT;
+        } else if (Symbol.GT_EQ.getLiterals().equals(compareOperator)) {
+            operator = ShardingOperator.GT_EQ;
+        } else if (Symbol.LT_EQ.getLiterals().equals(compareOperator)) {
+            operator = ShardingOperator.LT_EQ;
         } else {
             operator = null;
         }
