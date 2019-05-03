@@ -21,7 +21,10 @@ import com.google.common.collect.Range;
 import org.apache.shardingsphere.core.optimize.condition.ShardingCondition;
 import org.apache.shardingsphere.core.optimize.condition.ShardingConditions;
 import org.apache.shardingsphere.core.optimize.engine.sharding.query.QueryOptimizeEngine;
-import org.apache.shardingsphere.core.parse.old.parser.context.condition.*;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.AndCondition;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.Column;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.Condition;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.OrCondition;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLNumberExpression;
 import org.apache.shardingsphere.core.strategy.route.value.BetweenRouteValue;
@@ -50,7 +53,7 @@ public final class QueryOptimizeEngineTest {
         andCondition.getConditions().add(condition2);
         OrCondition orCondition = new OrCondition();
         orCondition.getAndConditions().add(andCondition);
-        ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(), null).optimize().getShardingConditions();
+        ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(),null ).optimize().getShardingConditions();
         assertTrue(shardingConditions.isAlwaysFalse());
     }
     
@@ -63,10 +66,6 @@ public final class QueryOptimizeEngineTest {
         andCondition.getConditions().add(condition2);
         OrCondition orCondition = new OrCondition();
         orCondition.getAndConditions().add(andCondition);
-
-        Group group = new Group();
-        group.add(condition1).add(And.instance).add(condition2);
-
         ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(), null).optimize().getShardingConditions();
         assertTrue(shardingConditions.isAlwaysFalse());
     }
@@ -80,10 +79,6 @@ public final class QueryOptimizeEngineTest {
         andCondition.getConditions().add(condition2);
         OrCondition orCondition = new OrCondition();
         orCondition.getAndConditions().add(andCondition);
-
-        Group group = new Group();
-        group.add(condition1).add(And.instance).add(condition2);
-
         ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(), null).optimize().getShardingConditions();
         assertTrue(shardingConditions.isAlwaysFalse());
     }
@@ -98,10 +93,6 @@ public final class QueryOptimizeEngineTest {
         andCondition.getConditions().add(condition2);
         OrCondition orCondition = new OrCondition();
         orCondition.getAndConditions().add(andCondition);
-
-        Group group = new Group();
-        group.add(condition1).add(And.instance).add(condition2);
-
         ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(), null).optimize().getShardingConditions();
         assertFalse(shardingConditions.isAlwaysFalse());
         ShardingCondition shardingCondition = shardingConditions.getShardingConditions().get(0);
@@ -121,10 +112,6 @@ public final class QueryOptimizeEngineTest {
         andCondition.getConditions().add(condition2);
         OrCondition orCondition = new OrCondition();
         orCondition.getAndConditions().add(andCondition);
-
-        Group group = new Group();
-        group.add(condition1).add(And.instance).add(condition2);
-
         ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(), null).optimize().getShardingConditions();
         assertFalse(shardingConditions.isAlwaysFalse());
         ShardingCondition shardingCondition = shardingConditions.getShardingConditions().get(0);
@@ -144,10 +131,6 @@ public final class QueryOptimizeEngineTest {
         andCondition.getConditions().add(condition2);
         OrCondition orCondition = new OrCondition();
         orCondition.getAndConditions().add(andCondition);
-
-        Group group = new Group();
-        group.add(condition1).add(And.instance).add(condition2);
-
         ShardingConditions shardingConditions = new QueryOptimizeEngine(orCondition, Collections.emptyList(), null).optimize().getShardingConditions();
         assertFalse(shardingConditions.isAlwaysFalse());
         ShardingCondition shardingCondition = shardingConditions.getShardingConditions().get(0);

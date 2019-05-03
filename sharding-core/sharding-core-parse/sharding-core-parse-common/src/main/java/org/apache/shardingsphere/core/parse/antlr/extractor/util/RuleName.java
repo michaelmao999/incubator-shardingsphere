@@ -139,13 +139,17 @@ public enum RuleName {
     
     LIMIT_CLAUSE("LimitClause"),
     
-    RANGE_CLAUSE("RangeClause"),
+    LIMIT_ROW_COUNT("LimitRowCount"),
+    
+    LIMIT_OFFSET("LimitOffset"),
     
     SUBQUERY("Subquery"),
     
     SHOW_PARAM("ShowParam"),
     
-    AUTO_COMMIT_VALUE("AutoCommitValue");
+    AUTO_COMMIT_VALUE("AutoCommitValue"),
+    
+    IMPLICIT_TRANSACTIONS_VALUE("ImplicitTransactionsValue");
     
     private final String name;
     

@@ -104,8 +104,8 @@ public class Condition implements  SQLCondition{
     }
     
     private void init(final SQLExpression sqlExpression, final int position) {
-        if (sqlExpression instanceof SQLPlaceholderExpression) {
-            positionIndexMap.put(position, ((SQLPlaceholderExpression) sqlExpression).getIndex());
+        if (sqlExpression instanceof SQLParameterMarkerExpression) {
+            positionIndexMap.put(position, ((SQLParameterMarkerExpression) sqlExpression).getIndex());
         } else if (sqlExpression instanceof SQLTextExpression) {
             positionValueMap.put(position, ((SQLTextExpression) sqlExpression).getText());
         } else if (sqlExpression instanceof SQLNumberExpression) {

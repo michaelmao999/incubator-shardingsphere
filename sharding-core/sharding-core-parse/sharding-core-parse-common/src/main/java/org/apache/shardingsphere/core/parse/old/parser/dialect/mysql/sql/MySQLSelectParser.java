@@ -26,7 +26,6 @@ import org.apache.shardingsphere.core.parse.old.parser.dialect.mysql.clause.faca
 import org.apache.shardingsphere.core.parse.old.parser.sql.dml.select.AbstractSelectParser;
 import org.apache.shardingsphere.core.rule.ShardingRule;
 
-
 /**
  * Select parser for MySQL.
  *

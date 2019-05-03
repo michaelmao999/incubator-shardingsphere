@@ -52,7 +52,7 @@ public abstract class AbstractSQLStatement implements SQLStatement {
     private final Conditions routeConditions = new Conditions();
 
     private final Group routeCondition = new Group();
-    
+
     private final Conditions encryptConditions = new Conditions();
     
     @Getter(AccessLevel.NONE)

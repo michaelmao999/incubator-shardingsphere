@@ -118,7 +118,7 @@ public final class BasicExpressionParser {
     private SQLExpression getExpression(final String literals, final SQLStatement sqlStatement) {
         if (lexerEngine.equalOne(Symbol.QUESTION)) {
             sqlStatement.setParametersIndex(sqlStatement.getParametersIndex() + 1);
-            return new SQLPlaceholderExpression(sqlStatement.getParametersIndex() - 1);
+            return new SQLParameterMarkerExpression(sqlStatement.getParametersIndex() - 1);
         }
         if (lexerEngine.equalOne(Literals.CHARS)) {
             return new SQLTextExpression(literals);
@@ -165,7 +165,7 @@ public final class BasicExpressionParser {
     private void setTableToken(final SQLStatement sqlStatement, final int beginPosition, final SQLPropertyExpression propertyExpr) {
         String owner = propertyExpr.getOwner().getName();
         if (sqlStatement.getTables().getTableNames().contains(SQLUtil.getExactlyValue(propertyExpr.getOwner().getName()))) {
-            sqlStatement.addSQLToken(new TableToken(beginPosition - owner.length(), owner, QuoteCharacter.getQuoteCharacter(owner), 0));
+            sqlStatement.addSQLToken(new TableToken(beginPosition - owner.length(), beginPosition - 1, owner, QuoteCharacter.getQuoteCharacter(owner)));
         }
     }
 }

@@ -48,11 +48,7 @@ public final class Dictionary {
     
     TokenType findTokenType(final String literals, final TokenType defaultTokenType) {
         String key = null == literals ? null : literals.toUpperCase();
-        Keyword kw = tokens.get(key);
-        if (kw == null) {
-            return defaultTokenType;
-        }
-        return kw;
+        return tokens.containsKey(key) ? tokens.get(key) : defaultTokenType;
     }
     
     TokenType findTokenType(final String literals) {

@@ -19,30 +19,24 @@ package org.apache.shardingsphere.core.parse.antlr.filler.sharding.dml;
 
 import com.google.common.base.Optional;
 import lombok.Setter;
-import org.apache.shardingsphere.core.constant.ShardingOperator;
 import org.apache.shardingsphere.core.metadata.table.ShardingTableMetaData;
 import org.apache.shardingsphere.core.parse.antlr.filler.api.SQLSegmentFiller;
 import org.apache.shardingsphere.core.parse.antlr.filler.api.ShardingRuleAwareFiller;
 import org.apache.shardingsphere.core.parse.antlr.filler.api.ShardingTableMetaDataAwareFiller;
-import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.column.ColumnSegment;
+import org.apache.shardingsphere.core.parse.antlr.filler.common.dml.PredicateUtils;
+import org.apache.shardingsphere.core.parse.antlr.filler.encrypt.dml.EncryptOrPredicateFiller;
 import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.predicate.AndPredicateSegment;
 import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.predicate.OrPredicateSegment;
 import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.predicate.PredicateSegment;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.predicate.value.PredicateBetweenRightValue;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.predicate.value.PredicateCompareRightValue;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.predicate.value.PredicateInRightValue;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
-import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
-import org.apache.shardingsphere.core.parse.antlr.sql.token.EncryptColumnToken;
-import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.AndCondition;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.Column;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.Condition;
 import org.apache.shardingsphere.core.parse.old.parser.context.condition.OrCondition;
-import org.apache.shardingsphere.core.parse.old.parser.context.table.Table;
-import org.apache.shardingsphere.core.parse.old.parser.context.table.Tables;
 import org.apache.shardingsphere.core.rule.ShardingRule;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Or predicate filler for sharding.
@@ -70,117 +64,56 @@ public final class ShardingOrPredicateFiller implements SQLSegmentFiller<OrPredi
      * @return or condition
      */
     public OrCondition buildCondition(final OrPredicateSegment sqlSegment, final SQLStatement sqlStatement) {
-        OrCondition result = fillShardingConditions(sqlSegment, sqlStatement);
-        fillEncryptConditions(sqlSegment, sqlStatement);
+        OrCondition result = createOrCondition(sqlSegment, sqlStatement);
+        createEncryptOrPredicateFiller().fill(sqlSegment, sqlStatement);
         return result;
     }
     
-    private OrCondition fillShardingConditions(final OrPredicateSegment sqlSegment, final SQLStatement sqlStatement) {
+    private EncryptOrPredicateFiller createEncryptOrPredicateFiller() {
+        EncryptOrPredicateFiller result = new EncryptOrPredicateFiller();
+        result.setEncryptorEngine(shardingRule.getShardingEncryptorEngine());
+        result.setShardingTableMetaData(shardingTableMetaData);
+        return result;
+    }
+    
+    private OrCondition createOrCondition(final OrPredicateSegment sqlSegment, final SQLStatement sqlStatement) {
         OrCondition result = new OrCondition();
         for (AndPredicateSegment each : sqlSegment.getAndPredicates()) {
-            List<PredicateSegment> predicates = new LinkedList<>();
-            boolean isNeedSharding = false;
+            AndCondition andCondition = new AndCondition();
             for (PredicateSegment predicate : each.getPredicates()) {
-                if (predicate.getExpression() instanceof ColumnSegment) {
-                    isNeedSharding = true;
+                Optional<String> tableName = PredicateUtils.findTableName(predicate, sqlStatement, shardingTableMetaData);
+                if (!tableName.isPresent() || !shardingRule.isShardingColumn(predicate.getColumn().getName(), tableName.get())) {
                     continue;
                 }
-                Optional<String> tableName = findTableName(predicate, sqlStatement);
-                if (isShardingCondition(predicate.getOperator()) && tableName.isPresent() && shardingRule.isShardingColumn(predicate.getColumn().getName(), tableName.get())) {
-                    predicates.add(predicate);
-                    isNeedSharding = true;
+                Optional<Condition> condition = createCondition(predicate, new Column(predicate.getColumn().getName(), tableName.get()));
+                if (condition.isPresent()) {
+                    andCondition.getConditions().add(condition.get());
                 }
             }
-            if (!isNeedSharding || predicates.isEmpty()) {
+            if (andCondition.getConditions().isEmpty()) {
                 result.getAndConditions().clear();
                 return result;
             }
-            result.getAndConditions().add(getAndCondition(predicates, sqlStatement));
+            result.getAndConditions().add(andCondition);
         }
         return result;
     }
     
-    private AndCondition getAndCondition(final List<PredicateSegment> predicateSegments, final SQLStatement sqlStatement) {
-        AndCondition result = new AndCondition();
-        for (PredicateSegment each : predicateSegments) {
-            Optional<String> tableName = findTableName(each, sqlStatement);
-            if (tableName.isPresent()) {
-                Column column = new Column(each.getColumn().getName(), tableName.get());
-                result.getConditions().add(each.getExpression().buildCondition(column, sqlStatement.getLogicSQL()));
-            }
+    private Optional<Condition> createCondition(final PredicateSegment predicateSegment, final Column column) {
+        if (predicateSegment.getRightValue() instanceof PredicateCompareRightValue) {
+            PredicateCompareRightValue compareRightValue = (PredicateCompareRightValue) predicateSegment.getRightValue();
+            return isOperatorSupportedWithSharding(compareRightValue.getOperator()) ? PredicateUtils.createCompareCondition(compareRightValue, column) : Optional.<Condition>absent();
         }
-        return result;
-    }
-    
-    private void fillEncryptConditions(final OrPredicateSegment sqlSegment, final SQLStatement sqlStatement) {
-        Collection<Integer> stopIndexes = new HashSet<>();
-        for (AndPredicateSegment each : sqlSegment.getAndPredicates()) {
-            for (PredicateSegment predicate : each.getPredicates()) {
-                if (!(predicate.getExpression() instanceof ColumnSegment) && stopIndexes.add(predicate.getStopIndex())) {
-                    Optional<String> tableName = findTableName(predicate, sqlStatement);
-                    if (tableName.isPresent()) {
-                        fillEncryptCondition(predicate.getColumn().getName(), tableName.get(), predicate, sqlStatement);
-                    }
-                }
-            }
+        if (predicateSegment.getRightValue() instanceof PredicateInRightValue) {
+            return PredicateUtils.createInCondition((PredicateInRightValue) predicateSegment.getRightValue(), column);
         }
-    }
-    
-    private void fillEncryptCondition(final String columnName, final String tableName, final PredicateSegment predicateSegment, final SQLStatement sqlStatement) {
-        if (!shardingRule.getShardingEncryptorEngine().getShardingEncryptor(tableName, columnName).isPresent()) {
-            return;
-        }
-        AndCondition andCondition;
-        if (0 == sqlStatement.getEncryptConditions().getOrCondition().getAndConditions().size()) {
-            andCondition = new AndCondition();
-            sqlStatement.getEncryptConditions().getOrCondition().getAndConditions().add(andCondition);
-        } else {
-            andCondition = sqlStatement.getEncryptConditions().getOrCondition().getAndConditions().get(0);
-        }
-        Column column = new Column(columnName, tableName);
-        andCondition.getConditions().add(predicateSegment.getExpression().buildCondition(column, sqlStatement.getLogicSQL()));
-        sqlStatement.getSQLTokens().add(new EncryptColumnToken(predicateSegment.getColumn().getStartIndex(), predicateSegment.getStopIndex(), column, true));
-    }
-    
-    private boolean isShardingCondition(final String operator) {
-        return Symbol.EQ.getLiterals().equals(operator) || ShardingOperator.IN.name().equals(operator) || ShardingOperator.BETWEEN.name().equals(operator);
-    }
-    
-    // TODO hongjun: find table from parent select statement, should find table in subquery level only
-    private Optional<String> findTableName(final PredicateSegment predicateSegment, final SQLStatement sqlStatement) {
-        if (!(sqlStatement instanceof SelectStatement)) {
-            return Optional.of(sqlStatement.getTables().getSingleTableName());
-        }
-        SelectStatement currentSelectStatement = (SelectStatement) sqlStatement;
-        while (null != currentSelectStatement.getParentStatement()) {
-            currentSelectStatement = currentSelectStatement.getParentStatement();
-            Optional<String> tableName = findTableName(predicateSegment, currentSelectStatement.getTables());
-            if (tableName.isPresent()) {
-                return tableName;
-            }
-        }
-        return findTableName(predicateSegment, currentSelectStatement.getTables());
-    }
-    
-    private Optional<String> findTableName(final PredicateSegment predicateSegment, final Tables tables) {
-        Collection<String> shardingLogicTableNames = shardingRule.getShardingLogicTableNames(tables.getTableNames());
-        if (tables.isSingleTable() || tables.isSameTable() || 1 == shardingLogicTableNames.size() || shardingRule.isAllBindingTables(shardingLogicTableNames)) {
-            return Optional.of(tables.getSingleTableName());
-        }
-        if (predicateSegment.getColumn().getOwner().isPresent()) {
-            Optional<Table> table = tables.find(predicateSegment.getColumn().getOwner().get());
-            return table.isPresent() ? Optional.of(table.get().getName()) : Optional.<String>absent();
-        } else {
-            return findTableNameFromMetaData(predicateSegment.getColumn().getName(), tables);
-        }
-    }
-    
-    private Optional<String> findTableNameFromMetaData(final String columnName, final Tables tables) {
-        for (String each : tables.getTableNames()) {
-            if (shardingTableMetaData.containsColumn(each, columnName)) {
-                return Optional.of(each);
-            }
+        if (predicateSegment.getRightValue() instanceof PredicateBetweenRightValue) {
+            return PredicateUtils.createBetweenCondition((PredicateBetweenRightValue) predicateSegment.getRightValue(), column);
         }
         return Optional.absent();
+    }
+    
+    private boolean isOperatorSupportedWithSharding(final String operator) {
+        return "=".equals(operator);
     }
 }

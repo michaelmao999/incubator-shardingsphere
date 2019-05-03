@@ -29,7 +29,7 @@ import org.apache.shardingsphere.core.parse.old.parser.context.insertvalue.Inser
 import org.apache.shardingsphere.core.parse.old.parser.context.table.Table;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLNumberExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLPlaceholderExpression;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLParameterMarkerExpression;
 import org.apache.shardingsphere.core.rule.EncryptRule;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,11 +84,11 @@ public final class EncryptInsertOptimizeEngineTest {
     private InsertStatement createInsertStatementWithValuesWithPlaceHolderWithEncrypt() {
         InsertStatement result = new InsertStatement();
         result.getTables().add(new Table("t_encrypt", null));
-        result.addSQLToken(new TableToken(12, "t_encrypt", QuoteCharacter.NONE, 0));
-        result.addSQLToken(new InsertValuesToken(34));
+        result.addSQLToken(new TableToken(12, 20, "t_encrypt", QuoteCharacter.NONE));
+        result.addSQLToken(new InsertValuesToken(21, 46));
         result.getColumnNames().add("col1");
         result.getColumnNames().add("col2");
-        result.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLPlaceholderExpression(0), new SQLPlaceholderExpression(1))));
+        result.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLParameterMarkerExpression(0), new SQLParameterMarkerExpression(1))));
         return result;
     }
     
@@ -112,8 +112,8 @@ public final class EncryptInsertOptimizeEngineTest {
     private InsertStatement createInsertStatementWithValuesWithoutPlaceHolderWithQueryEncrypt() {
         InsertStatement result = new InsertStatement();
         result.getTables().add(new Table("t_query_encrypt", null));
-        result.addSQLToken(new TableToken(12, "t_query_encrypt", QuoteCharacter.NONE, 0));
-        result.addSQLToken(new InsertValuesToken(40));
+        result.addSQLToken(new TableToken(12, 27, "t_query_encrypt", QuoteCharacter.NONE));
+        result.addSQLToken(new InsertValuesToken(27, 52));
         result.getColumnNames().add("col1");
         result.getColumnNames().add("col2");
         result.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLNumberExpression(1), new SQLNumberExpression(2))));
@@ -138,8 +138,8 @@ public final class EncryptInsertOptimizeEngineTest {
     private InsertStatement createInsertStatementWithSetWithoutPlaceHolderWithEncrypt() {
         InsertStatement result = new InsertStatement();
         result.getTables().add(new Table("t_encrypt", null));
-        result.addSQLToken(new TableToken(12, "t_encrypt", QuoteCharacter.NONE, 0));
-        result.addSQLToken(new InsertSetToken(34));
+        result.addSQLToken(new TableToken(12, 20, "t_encrypt", QuoteCharacter.NONE));
+        result.addSQLToken(new InsertSetToken(12, 20));
         result.getColumnNames().add("col1");
         result.getColumnNames().add("col2");
         result.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLNumberExpression(1), new SQLNumberExpression(2))));
@@ -166,11 +166,11 @@ public final class EncryptInsertOptimizeEngineTest {
     private InsertStatement createInsertStatementWithSetWithPlaceHolderWithQueryEncrypt() {
         InsertStatement result = new InsertStatement();
         result.getTables().add(new Table("t_query_encrypt", null));
-        result.addSQLToken(new TableToken(12, "t_query_encrypt", QuoteCharacter.NONE, 0));
-        result.addSQLToken(new InsertSetToken(40));
+        result.addSQLToken(new TableToken(12, 26, "t_query_encrypt", QuoteCharacter.NONE));
+        result.addSQLToken(new InsertSetToken(12, 27));
         result.getColumnNames().add("col1");
         result.getColumnNames().add("col2");
-        result.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLPlaceholderExpression(0), new SQLPlaceholderExpression(1))));
+        result.getValues().add(new InsertValue(Arrays.<SQLExpression>asList(new SQLParameterMarkerExpression(0), new SQLParameterMarkerExpression(1))));
         return result;
     }
 }

@@ -55,7 +55,7 @@ public interface SQLStatement {
     Conditions getRouteConditions();
 
     Group getRouteCondition();
-    
+
     /**
      * Get encrypt conditions.
      *

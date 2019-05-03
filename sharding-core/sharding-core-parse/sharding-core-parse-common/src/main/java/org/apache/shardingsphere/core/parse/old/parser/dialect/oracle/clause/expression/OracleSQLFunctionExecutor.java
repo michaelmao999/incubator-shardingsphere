@@ -33,16 +33,16 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
             date1String = ((SQLIdentifierExpression)date1).getName();
         } else if (date1 instanceof SQLTextExpression) {
             date1String = ((SQLTextExpression)date1).getText();
-        } else if (date1 instanceof SQLPlaceholderExpression) {
-            date1String = (String) sqlparameters.get(((SQLPlaceholderExpression) date1).getIndex());
+        } else if (date1 instanceof SQLParameterMarkerExpression) {
+            date1String = (String) sqlparameters.get(((SQLParameterMarkerExpression) date1).getIndex());
         }
         String formatText = null;
         if (dateFormat instanceof SQLIdentifierExpression) {
             formatText = ((SQLIdentifierExpression)dateFormat).getName();
         } else if (dateFormat instanceof SQLTextExpression) {
             formatText = ((SQLTextExpression)dateFormat).getText();
-        } else if (dateFormat instanceof SQLPlaceholderExpression) {
-            formatText = (String) sqlparameters.get(((SQLPlaceholderExpression) dateFormat).getIndex());
+        } else if (dateFormat instanceof SQLParameterMarkerExpression) {
+            formatText = (String) sqlparameters.get(((SQLParameterMarkerExpression) dateFormat).getIndex());
         }
         if (date1String == null || formatText == null) {
             return null;

@@ -262,7 +262,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         if (!sqlStatement.getTables().isSingleTable() && !(left instanceof SQLPropertyExpression)) {
             return NullCondition.instance;
         }
-        if (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression || right instanceof  SQLFunctionExpression) {
+        if (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLParameterMarkerExpression || right instanceof  SQLFunctionExpression) {
             Optional<Column> column = find(sqlStatement.getTables(), left);
             if (column.isPresent() && shardingRule.isShardingColumn(column.get().getName(), column.get().getTableName())) {
                 return new Condition(column.get(), operator.getLiterals(), right);
@@ -278,7 +278,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         do {
             SQLExpression right = basicExpressionParser.parse(sqlStatement);
             rights.add(right);
-            if (!(right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression)) {
+            if (!(right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLParameterMarkerExpression)) {
                 hasComplexExpression = true;
             }
             skipsDoubleColon();
@@ -300,14 +300,14 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         boolean hasComplexExpression = false;
         SQLExpression right1 = basicExpressionParser.parse(sqlStatement);
         if (!(right1 instanceof SQLNumberExpression || right1 instanceof SQLTextExpression
-                || right1 instanceof SQLPlaceholderExpression || right1 instanceof SQLFunctionExpression)) {
+                || right1 instanceof SQLParameterMarkerExpression || right1 instanceof SQLFunctionExpression)) {
             hasComplexExpression = true;
         }
         skipsDoubleColon();
         lexerEngine.accept(DefaultKeyword.AND);
         SQLExpression right2 = basicExpressionParser.parse(sqlStatement);
         if (!(right2 instanceof SQLNumberExpression || right2 instanceof SQLTextExpression
-                || right2 instanceof SQLPlaceholderExpression || right2 instanceof SQLFunctionExpression)) {
+                || right2 instanceof SQLParameterMarkerExpression || right2 instanceof SQLFunctionExpression)) {
             hasComplexExpression = true;
         }
         if (!sqlStatement.getTables().isSingleTable() && !(left instanceof SQLPropertyExpression)) {
@@ -343,9 +343,9 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         if (sqlExpression instanceof SQLNumberExpression) {
             int rowCount = ((SQLNumberExpression) sqlExpression).getNumber().intValue();
             selectStatement.getLimit().setRowCount(new LimitValue(rowCount, -1, includeRowCount));
-            selectStatement.addSQLToken(new RowCountToken(endPosition - String.valueOf(rowCount).length(), rowCount));
-        } else if (sqlExpression instanceof SQLPlaceholderExpression) {
-            selectStatement.getLimit().setRowCount(new LimitValue(-1, ((SQLPlaceholderExpression) sqlExpression).getIndex(), includeRowCount));
+            selectStatement.addSQLToken(new RowCountToken(endPosition - String.valueOf(rowCount).length(), endPosition - 1, rowCount));
+        } else if (sqlExpression instanceof SQLParameterMarkerExpression) {
+            selectStatement.getLimit().setRowCount(new LimitValue(-1, ((SQLParameterMarkerExpression) sqlExpression).getIndex(), includeRowCount));
         }
     }
     
@@ -357,10 +357,10 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         if (sqlExpression instanceof SQLNumberExpression) {
             int offset = ((SQLNumberExpression) sqlExpression).getNumber().intValue();
             selectStatement.getLimit().setOffset(new LimitValue(offset, -1, includeOffset));
-            selectStatement.addSQLToken(new OffsetToken(
-                    lexerEngine.getCurrentToken().getEndPosition() - String.valueOf(offset).length() - lexerEngine.getCurrentToken().getLiterals().length(), offset));
-        } else if (sqlExpression instanceof SQLPlaceholderExpression) {
-            selectStatement.getLimit().setOffset(new LimitValue(-1, ((SQLPlaceholderExpression) sqlExpression).getIndex(), includeOffset));
+            selectStatement.addSQLToken(new OffsetToken(lexerEngine.getCurrentToken().getEndPosition() - String.valueOf(offset).length() - lexerEngine.getCurrentToken().getLiterals().length(),
+                    lexerEngine.getCurrentToken().getEndPosition() - 1, offset));
+        } else if (sqlExpression instanceof SQLParameterMarkerExpression) {
+            selectStatement.getLimit().setOffset(new LimitValue(-1, ((SQLParameterMarkerExpression) sqlExpression).getIndex(), includeOffset));
         }
     }
     

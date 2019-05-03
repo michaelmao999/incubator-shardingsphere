@@ -22,6 +22,8 @@ import org.apache.shardingsphere.core.parse.antlr.filler.api.EncryptRuleAwareFil
 import org.apache.shardingsphere.core.parse.antlr.filler.api.SQLSegmentFiller;
 import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.assignment.AssignmentSegment;
 import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.assignment.SetAssignmentsSegment;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.expr.complex.ComplexExpressionSegment;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.expr.simple.SimpleExpressionSegment;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.InsertStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.UpdateStatement;
@@ -61,13 +63,14 @@ public final class EncryptSetAssignmentsFiller implements SQLSegmentFiller<SetAs
         InsertValue insertValue = getInsertValue(sqlSegment, insertStatement.getLogicSQL());
         insertStatement.getValues().add(insertValue);
         insertStatement.setParametersIndex(insertValue.getParametersCount());
-        insertStatement.getSQLTokens().add(new InsertSetToken(sqlSegment.getStartIndex()));
+        insertStatement.getSQLTokens().add(new InsertSetToken(sqlSegment.getStartIndex(), insertStatement.getLogicSQL().length() - 1));
     }
     
     private InsertValue getInsertValue(final SetAssignmentsSegment sqlSegment, final String sql) {
         List<SQLExpression> columnValues = new LinkedList<>();
         for (AssignmentSegment each : sqlSegment.getAssignments()) {
-            SQLExpression sqlExpression = each.getValue().getSQLExpression(sql);
+            SQLExpression sqlExpression = each.getValue() instanceof SimpleExpressionSegment
+                    ? ((SimpleExpressionSegment) each.getValue()).getSQLExpression() : ((ComplexExpressionSegment) each.getValue()).getSQLExpression(sql);
             columnValues.add(sqlExpression);
         }
         return new InsertValue(columnValues);
@@ -82,8 +85,9 @@ public final class EncryptSetAssignmentsFiller implements SQLSegmentFiller<SetAs
     
     private void fillEncryptCondition(final AssignmentSegment assignment, final String tableName, final UpdateStatement updateStatement) {
         Column column = new Column(assignment.getColumn().getName(), tableName);
-        SQLExpression expression = assignment.getValue().getSQLExpression(updateStatement.getLogicSQL());
-        updateStatement.getAssignments().put(column, expression);
+        SQLExpression sqlExpression = assignment.getValue() instanceof SimpleExpressionSegment
+                ? ((SimpleExpressionSegment) assignment.getValue()).getSQLExpression() : ((ComplexExpressionSegment) assignment.getValue()).getSQLExpression(updateStatement.getLogicSQL());
+        updateStatement.getAssignments().put(column, sqlExpression);
         if (encryptRule.getEncryptorEngine().getShardingEncryptor(column.getTableName(), column.getName()).isPresent()) {
             updateStatement.getSQLTokens().add(new EncryptColumnToken(assignment.getColumn().getStartIndex(), assignment.getValue().getStopIndex(), column, false));
         }

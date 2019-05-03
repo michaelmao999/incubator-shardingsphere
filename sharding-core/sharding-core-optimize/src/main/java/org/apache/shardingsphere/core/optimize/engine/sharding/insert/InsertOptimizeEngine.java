@@ -182,7 +182,7 @@ public final class InsertOptimizeEngine implements OptimizeEngine {
     
     private void fillInsertOptimizeResultUnit(final InsertOptimizeResultUnit unit, final Comparable<?> columnValue) {
         if (!parameters.isEmpty()) {
-            unit.addColumnValue(new SQLPlaceholderExpression(parameters.size() - 1));
+            unit.addColumnValue(new SQLParameterMarkerExpression(parameters.size() - 1));
             unit.addColumnParameter(columnValue);
         } else if (columnValue.getClass() == String.class) {
             unit.addColumnValue(new SQLTextExpression(columnValue.toString()));
