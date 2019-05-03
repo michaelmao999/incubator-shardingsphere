@@ -48,17 +48,14 @@ public final class NewQueryOptimizeEngine implements NewOptimizeEngine {
     
     @Override
     public GroupRouteValue optimize() {
-        if (shardingCondition != null) {
-            GroupRouteValue groupRouteValue = shardingAndOptimize(shardingCondition.getExpressions());
-            groupRouteValue.optimize();
-            boolean isAlwaysFalse = false;
-            if (!groupRouteValue.isEmpty()) {
-               isAlwaysFalse = checkIfAlwaysFalse(groupRouteValue);
-            }
-            groupRouteValue.setAlwaysFalse(isAlwaysFalse);
-            return groupRouteValue;
+        GroupRouteValue groupRouteValue = shardingAndOptimize(shardingCondition.getExpressions());
+        groupRouteValue.optimize();
+        boolean isAlwaysFalse = false;
+        if (!groupRouteValue.isEmpty()) {
+           isAlwaysFalse = checkIfAlwaysFalse(groupRouteValue);
         }
-        return null;
+        groupRouteValue.setAlwaysFalse(isAlwaysFalse);
+        return groupRouteValue;
     }
 
 

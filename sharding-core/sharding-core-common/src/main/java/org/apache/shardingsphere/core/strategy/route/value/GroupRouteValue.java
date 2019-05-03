@@ -88,11 +88,7 @@ public class GroupRouteValue implements RouteValueCondition{
     }
 
     public GroupRouteValue add(GroupRouteValue group) {
-        if (conditionList.isEmpty()) {
-            conditionList.addAll(group.getConditionList());
-        } else {
-            conditionList.add(group);
-        }
+        conditionList.add(group);
         return this;
     }
 
