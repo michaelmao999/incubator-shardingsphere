@@ -15,37 +15,34 @@
  * limitations under the License.
  */
 
-grammar MySQLStatement;
+package org.apache.shardingsphere.core.parse.antlr.sql.token;
 
-import Keyword, Symbol, Comments, DMLStatement, DDLStatement, TCLStatement, DCLStatement;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.shardingsphere.core.parse.antlr.sql.Attachable;
 
-execute
-    : (select
-    | insert
-    | replace
-    | update
-    | delete
-    | createTable
-    | alterTable
-    | dropTable
-    | truncateTable
-    | createIndex
-    | dropIndex
-    | setTransaction
-    | beginTransaction
-    | setAutoCommit
-    | commit
-    | rollback
-    | savepoint
-    | grant
-    | revoke
-    | createUser
-    | dropUser
-    | alterUser
-    | renameUser
-    | createRole
-    | dropRole
-    | setRole
-    | setPassword
-    )SEMI_? 
-    ;
+import java.util.LinkedList;
+import java.util.List;
+
+/**
+ * Select items token.
+ *
+ * @author zhangliang
+ * @author panjuan
+ */
+@Getter
+@ToString
+@EqualsAndHashCode(callSuper = true)
+public final class SelectItemsToken extends SQLToken implements Attachable {
+    
+    @Setter
+    private boolean isFirstOfItemsSpecial;
+    
+    private final List<String> items = new LinkedList<>();
+    
+    public SelectItemsToken(final int startIndex) {
+        super(startIndex);
+    }
+}

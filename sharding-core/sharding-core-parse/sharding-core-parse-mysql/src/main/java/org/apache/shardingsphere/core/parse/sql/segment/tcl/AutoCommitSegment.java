@@ -15,37 +15,20 @@
  * limitations under the License.
  */
 
-grammar MySQLStatement;
+package org.apache.shardingsphere.core.parse.sql.segment.tcl;
 
-import Keyword, Symbol, Comments, DMLStatement, DDLStatement, TCLStatement, DCLStatement;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.SQLSegment;
 
-execute
-    : (select
-    | insert
-    | replace
-    | update
-    | delete
-    | createTable
-    | alterTable
-    | dropTable
-    | truncateTable
-    | createIndex
-    | dropIndex
-    | setTransaction
-    | beginTransaction
-    | setAutoCommit
-    | commit
-    | rollback
-    | savepoint
-    | grant
-    | revoke
-    | createUser
-    | dropUser
-    | alterUser
-    | renameUser
-    | createRole
-    | dropRole
-    | setRole
-    | setPassword
-    )SEMI_? 
-    ;
+/**
+ * Auto commit segment.
+ * 
+ * @author zhangliang
+ */
+@RequiredArgsConstructor
+@Getter
+public final class AutoCommitSegment implements SQLSegment {
+    
+    private final boolean autoCommit;
+}

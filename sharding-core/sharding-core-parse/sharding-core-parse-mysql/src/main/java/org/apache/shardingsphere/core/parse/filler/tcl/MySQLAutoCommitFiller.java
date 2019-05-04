@@ -15,34 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.shardingsphere.core.parse.antlr.sql.token;
+package org.apache.shardingsphere.core.parse.filler.tcl;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import org.apache.shardingsphere.core.parse.antlr.sql.Attachable;
-
-import java.util.LinkedList;
-import java.util.List;
+import org.apache.shardingsphere.core.parse.antlr.filler.api.SQLSegmentFiller;
+import org.apache.shardingsphere.core.parse.antlr.sql.segment.SQLSegment;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.tcl.SetAutoCommitStatement;
+import org.apache.shardingsphere.core.parse.sql.segment.tcl.AutoCommitSegment;
 
 /**
- * Select items token.
+ * Auto commit filler for MySQL.
  *
  * @author zhangliang
- * @author panjuan
  */
-@Getter
-@ToString
-@EqualsAndHashCode(callSuper = true)
-public final class ItemsToken extends SQLToken implements Attachable {
+public final class MySQLAutoCommitFiller implements SQLSegmentFiller {
     
-    @Setter
-    private boolean isFirstOfItemsSpecial;
-    
-    private final List<String> items = new LinkedList<>();
-    
-    public ItemsToken(final int startIndex) {
-        super(startIndex);
+    @Override
+    public void fill(final SQLSegment sqlSegment, final SQLStatement sqlStatement) {
+        ((SetAutoCommitStatement) sqlStatement).setAutoCommit(((AutoCommitSegment) sqlSegment).isAutoCommit());
     }
 }
