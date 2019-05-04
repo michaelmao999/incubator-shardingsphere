@@ -21,9 +21,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
+import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExpression;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLParameterMarkerExpression;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Insert value.
@@ -47,6 +49,18 @@ public final class InsertValue {
         for (SQLExpression each : assignments) {
             if (each instanceof SQLParameterMarkerExpression) {
                 result++;
+            } else if (each instanceof SQLFunctionExpression) {
+                SQLFunctionExpression functionExpression = (SQLFunctionExpression) each;
+                List<SQLExpression> subExpressionList = functionExpression.getParameters();
+                if (subExpressionList != null) {
+                    int len = subExpressionList.size();
+                    for (int index = 0; index < len; index++) {
+                        SQLExpression subExpress = subExpressionList.get(index);
+                        if (subExpress instanceof SQLParameterMarkerExpression) {
+                            result++;
+                        }
+                    }
+                }
             }
         }
         return result;

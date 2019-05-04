@@ -59,8 +59,9 @@ public final class EncryptInsertOptimizeEngine implements OptimizeEngine {
         int insertOptimizeResultIndex = 0;
         for (InsertValue each : insertValues) {
             SQLExpression[] currentColumnValues = createCurrentColumnValues(each);
-            Object[] currentParameters = createCurrentParameters(parametersCount, each);
-            parametersCount = parametersCount + each.getParametersCount();
+            int parameterCount = each.getParametersCount();
+            Object[] currentParameters = createCurrentParameters(parametersCount, each, parameterCount);
+            parametersCount = parametersCount + parameterCount;
             insertOptimizeResult.addUnit(currentColumnValues, currentParameters);
             if (isNeededToAppendQueryAssistedColumn()) {
                 fillWithQueryAssistedColumn(insertOptimizeResult, insertOptimizeResultIndex);
@@ -81,12 +82,12 @@ public final class EncryptInsertOptimizeEngine implements OptimizeEngine {
         return result;
     }
     
-    private Object[] createCurrentParameters(final int beginIndex, final InsertValue insertValue) {
-        if (0 == insertValue.getParametersCount()) {
+    private Object[] createCurrentParameters(final int beginIndex, final InsertValue insertValue, final int parameterCount) {
+        if (0 == parameterCount) {
             return new Object[0];
         }
-        Object[] result = new Object[insertValue.getParametersCount() + getIncrement()];
-        parameters.subList(beginIndex, beginIndex + insertValue.getParametersCount()).toArray(result);
+        Object[] result = new Object[parameterCount + getIncrement()];
+        parameters.subList(beginIndex, beginIndex + parameterCount).toArray(result);
         return result;
     }
     

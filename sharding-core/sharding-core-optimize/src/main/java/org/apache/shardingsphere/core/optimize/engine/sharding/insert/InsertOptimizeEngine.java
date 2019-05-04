@@ -19,6 +19,7 @@ package org.apache.shardingsphere.core.optimize.engine.sharding.insert;
 
 import com.google.common.base.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.core.exception.ShardingException;
 import org.apache.shardingsphere.core.optimize.GeneratedKey;
 import org.apache.shardingsphere.core.optimize.condition.ShardingCondition;
 import org.apache.shardingsphere.core.optimize.condition.ShardingConditions;
@@ -36,12 +37,7 @@ import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.rule.ShardingRule;
 import org.apache.shardingsphere.core.strategy.route.value.ListRouteValue;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Insert optimize engine.
@@ -73,8 +69,9 @@ public final class InsertOptimizeEngine implements OptimizeEngine {
         for (int i = 0; i < andConditions.size(); i++) {
             InsertValue insertValue = insertStatement.getValues().get(i);
             SQLExpression[] currentColumnValues = createCurrentColumnValues(insertValue);
-            Object[] currentParameters = createCurrentParameters(parametersCount, insertValue);
-            parametersCount = parametersCount + insertValue.getParametersCount();
+            int parameterCount = insertValue.getParametersCount();
+            Object[] currentParameters = createCurrentParameters(parametersCount, insertValue, parameterCount);
+            parametersCount = parametersCount + parameterCount;
             ShardingCondition shardingCondition = createShardingCondition(andConditions.get(i));
             insertOptimizeResult.addUnit(currentColumnValues, currentParameters);
             if (isNeededToAppendGeneratedKey()) {
@@ -106,12 +103,12 @@ public final class InsertOptimizeEngine implements OptimizeEngine {
         return result;
     }
     
-    private Object[] createCurrentParameters(final int beginIndex, final InsertValue insertValue) {
-        if (0 == insertValue.getParametersCount()) {
+    private Object[] createCurrentParameters(final int beginIndex, final InsertValue insertValue, final int parameterCount) {
+        if (0 == parameterCount) {
             return new Object[0];
         }
-        Object[] result = new Object[insertValue.getParametersCount() + getIncrement()];
-        parameters.subList(beginIndex, beginIndex + insertValue.getParametersCount()).toArray(result);
+        Object[] result = new Object[parameterCount + getIncrement()];
+        parameters.subList(beginIndex, beginIndex + parameterCount).toArray(result);
         return result;
     }
     
@@ -142,11 +139,31 @@ public final class InsertOptimizeEngine implements OptimizeEngine {
     private Collection<ListRouteValue> getShardingValues(final AndCondition andCondition) {
         Collection<ListRouteValue> result = new LinkedList<>();
         for (Condition each : andCondition.getConditions()) {
-            result.add(new ListRouteValue<>(each.getColumn().getName(), each.getColumn().getTableName(), each.getConditionValues(parameters)));
+            List<Comparable<?>> conditionValues = each.getConditionValues(parameters);
+            if (!each.getPositionExpressionMap().isEmpty()) {
+                conditionValues = computeConditionValues(conditionValues, each.getPositionExpressionMap(), parameters);
+            }
+            result.add(new ListRouteValue<>(each.getColumn().getName(), each.getColumn().getTableName(), conditionValues));
         }
         return result;
     }
-    
+
+    private List<Comparable<?>> computeConditionValues(List<Comparable<?>> result, Map<Integer, SQLFunctionExpression> positionExpressionMap, final List<Object> parameters) {
+        for (Map.Entry<Integer, SQLFunctionExpression> entry : positionExpressionMap.entrySet()) {
+            Object parameter = sqlFunctionExector.compute(entry.getValue(), parameters);
+            if (!(parameter instanceof Comparable<?>)) {
+                throw new ShardingException("Parameter `%s` should extends Comparable for sharding value.", parameter);
+            }
+            if (entry.getKey() < result.size()) {
+                result.add(entry.getKey(), (Comparable<?>) parameter);
+            } else {
+                result.add((Comparable<?>) parameter);
+            }
+        }
+        return result;
+    }
+
+
     private void fillWithGeneratedKeyName(final InsertOptimizeResult insertOptimizeResult) {
         String generateKeyColumnName = shardingRule.findGenerateKeyColumnName(insertStatement.getTables().getSingleTableName()).get();
         insertOptimizeResult.getColumnNames().remove(generateKeyColumnName);

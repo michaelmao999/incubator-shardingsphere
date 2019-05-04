@@ -20,11 +20,7 @@ package org.apache.shardingsphere.core.optimize.result.insert;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.core.exception.ShardingException;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLIgnoreExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLNumberExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLParameterMarkerExpression;
-import org.apache.shardingsphere.core.parse.old.parser.expression.SQLTextExpression;
+import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.rule.DataNode;
 
 import java.util.ArrayList;
@@ -122,6 +118,8 @@ public abstract class InsertOptimizeResultUnit {
             return parameters[getParameterIndex(sqlExpression)];
         } else if (sqlExpression instanceof SQLTextExpression) {
             return ((SQLTextExpression) sqlExpression).getText();
+        } else if (sqlExpression instanceof SQLFunctionExpression) {
+            return ((SQLFunctionExpression) sqlExpression).getValue();
         } else {
             return ((SQLNumberExpression) sqlExpression).getNumber();
         }
@@ -135,6 +133,8 @@ public abstract class InsertOptimizeResultUnit {
             return String.format("'%s'", ((SQLTextExpression) sqlExpression).getText());
         } else if (sqlExpression instanceof SQLIgnoreExpression) {
             return ((SQLIgnoreExpression) sqlExpression).getExpression();
+        } else if (sqlExpression instanceof SQLFunctionExpression) {
+            return ((SQLFunctionExpression) sqlExpression).toFunctionSQL();
         } else {
             return String.valueOf(((SQLNumberExpression) sqlExpression).getNumber());
         }
