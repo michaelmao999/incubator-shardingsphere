@@ -60,7 +60,9 @@ public final class TableUnit {
      * @return routing table
      */
     public Optional<RoutingTable> getRoutingTable(final String dataSourceName, final String actualTableName) {
-        for (RoutingTable each : routingTables) {
+        int len = routingTables.size();
+        for (int index = 0; index < len; index++) {
+            RoutingTable each = routingTables.get(index);
             if (dataSourceName.equalsIgnoreCase(masterSlaveLogicDataSourceName) && each.getActualTableName().equalsIgnoreCase(actualTableName)) {
                 return Optional.of(each);
             }
@@ -77,7 +79,9 @@ public final class TableUnit {
      */
     public Set<String> getActualTableNames(final String dataSourceName, final String logicTableName) {
         Set<String> result = new HashSet<>(routingTables.size(), 1);
-        for (RoutingTable each : routingTables) {
+        int len = routingTables.size();
+        for (int index = 0; index < len; index++) {
+            RoutingTable each = routingTables.get(index);
             if (dataSourceName.equalsIgnoreCase(this.dataSourceName) && each.getLogicTableName().equalsIgnoreCase(logicTableName)) {
                 result.add(each.getActualTableName());
             }
@@ -93,7 +97,9 @@ public final class TableUnit {
      */
     public Set<String> getLogicTableNames(final String dataSourceName) {
         Set<String> result = new HashSet<>(routingTables.size(), 1);
-        for (RoutingTable each : routingTables) {
+        int len = routingTables.size();
+        for (int index = 0; index < len; index++) {
+            RoutingTable each = routingTables.get(index);
             if (dataSourceName.equalsIgnoreCase(this.dataSourceName)) {
                 result.add(each.getLogicTableName());
             }

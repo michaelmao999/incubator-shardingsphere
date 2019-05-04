@@ -185,8 +185,10 @@ public final class SQLRewriteEngine {
     }
     
     private void appendTokensAndPlaceholders(final boolean isRewrite, final SQLBuilder sqlBuilder) {
-        int count = 0;
-        for (SQLToken each : sqlTokens) {
+        //int count = 0;
+        int len = sqlTokens.size();
+        for (int count = 0; count < len; count++) {
+            SQLToken each = sqlTokens.get(count);
             if (each instanceof TableToken) {
                 appendTablePlaceholder(sqlBuilder, (TableToken) each, count);
             } else if (each instanceof SchemaToken) {
@@ -212,7 +214,6 @@ public final class SQLRewriteEngine {
             } else if (each instanceof RemoveToken) {
                 appendRest(sqlBuilder, count, getStopIndex(each));
             }
-            count++;
         }
     }
     
@@ -251,7 +252,10 @@ public final class SQLRewriteEngine {
     }
     
     private void appendInsertValuesToken(final SQLBuilder sqlBuilder, final InsertValuesToken insertValuesToken, final int count, final InsertOptimizeResult insertOptimizeResult) {
-        for (InsertOptimizeResultUnit each : insertOptimizeResult.getUnits()) {
+        List<InsertOptimizeResultUnit> units = insertOptimizeResult.getUnits();
+        int len = units.size();
+        for (int index = 0; index < len; index++) {
+            InsertOptimizeResultUnit each = units.get(index);
             encryptInsertOptimizeResultUnit(insertOptimizeResult.getColumnNames(), each);
         }
         sqlBuilder.appendPlaceholder(new InsertValuesPlaceholder(sqlStatement.getTables().getSingleTableName(), insertOptimizeResult.getColumnNames(), insertOptimizeResult.getUnits()));
@@ -259,7 +263,10 @@ public final class SQLRewriteEngine {
     }
     
     private void appendInsertSetToken(final SQLBuilder sqlBuilder, final InsertSetToken insertSetToken, final int count, final InsertOptimizeResult insertOptimizeResult) {
-        for (InsertOptimizeResultUnit each : insertOptimizeResult.getUnits()) {
+        List<InsertOptimizeResultUnit> units = insertOptimizeResult.getUnits();
+        int len = units.size();
+        for (int index = 0; index < len; index++) {
+            InsertOptimizeResultUnit each = units.get(index);
             encryptInsertOptimizeResultUnit(insertOptimizeResult.getColumnNames(), each);
         }
         sqlBuilder.appendPlaceholder(new InsertSetPlaceholder(sqlStatement.getTables().getSingleTableName(), insertOptimizeResult.getColumnNames(), insertOptimizeResult.getUnits()));
@@ -519,7 +526,10 @@ public final class SQLRewriteEngine {
    
     private Map<String, String> getTableTokens(final TableUnit tableUnit) {
         Map<String, String> result = new HashMap<>();
-        for (RoutingTable each : tableUnit.getRoutingTables()) {
+        List<RoutingTable> routingTables = tableUnit.getRoutingTables();
+        int len = routingTables.size();
+        for (int index = 0; index < len; index++) {
+            RoutingTable each = routingTables.get(index);
             String logicTableName = each.getLogicTableName().toLowerCase();
             result.put(logicTableName, each.getActualTableName());
             Optional<BindingTableRule> bindingTableRule = shardingRule.findBindingTableRule(logicTableName);

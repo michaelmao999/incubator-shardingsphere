@@ -62,8 +62,9 @@ public final class Tables {
      */
     public boolean isSingleTable() {
         Collection<String> tableNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        for (Table each : tables) {
-            tableNames.add(each.getName());
+        int len = tables.size();
+        for (int index = 0; index < len; index++) {
+            tableNames.add(tables.get(index).getName());
         }
         return 1 == tableNames.size();
     }
@@ -85,8 +86,9 @@ public final class Tables {
      */
     public Collection<String> getTableNames() {
         Collection<String> result = new LinkedHashSet<>(tables.size(), 1);
-        for (Table each : tables) {
-            result.add(each.getName());
+        int len = tables.size();
+        for (int index = 0; index < len; index++) {
+            result.add(tables.get(index).getName());
         }
         return result;
     }
@@ -103,7 +105,9 @@ public final class Tables {
     }
     
     private Optional<Table> findTableFromName(final String name) {
-        for (Table each : tables) {
+        int len = tables.size();
+        for (int index = 0; index < len; index++) {
+            Table each = tables.get(index);
             if (each.getName().equals(name)) {
                 return Optional.of(each);
             }
@@ -112,7 +116,9 @@ public final class Tables {
     }
     
     private Optional<Table> findTableFromAlias(final String alias) {
-        for (Table each : tables) {
+        int len = tables.size();
+        for (int index = 0; index < len; index++) {
+            Table each = tables.get(index);
             if (each.getAlias().isPresent() && each.getAlias().get().equalsIgnoreCase(alias)) {
                 return Optional.of(each);
             }

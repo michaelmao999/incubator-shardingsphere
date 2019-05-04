@@ -99,7 +99,9 @@ public final class SQLBuilder {
     public SQLUnit toSQL(final TableUnit tableUnit, final Map<String, String> logicAndActualTableMap, final ShardingRule shardingRule, final ShardingDataSourceMetaData shardingDataSourceMetaData) {
         StringBuilder result = new StringBuilder();
         List<Object> insertParameters = new LinkedList<>();
-        for (Object each : segments) {
+        int len = segments.size();
+        for (int index = 0; index < len; index++) {
+            Object each = segments.get(index);
             if (!(each instanceof ShardingPlaceholder)) {
                 result.append(each);
                 continue;
@@ -183,7 +185,10 @@ public final class SQLBuilder {
     
     private void appendInsertValuesPlaceholder(final TableUnit tableUnit, final InsertValuesPlaceholder placeholder, final List<Object> insertParameters, final StringBuilder stringBuilder) {
         stringBuilder.append(" (").append(Joiner.on(", ").join(placeholder.getColumnNames())).append(") VALUES ");
-        for (InsertOptimizeResultUnit each : placeholder.getUnits()) {
+        List<InsertOptimizeResultUnit> units = placeholder.getUnits();
+        int len = units.size();
+        for (int index = 0; index < len; index++) {
+            InsertOptimizeResultUnit each = units.get(index);
             if (isToAppendInsertOptimizeResult(tableUnit, each)) {
                 appendInsertOptimizeResult(each, insertParameters, stringBuilder);
             }
@@ -210,7 +215,10 @@ public final class SQLBuilder {
         if (unit.getDataNodes().isEmpty() || null == tableUnit) {
             return true;
         }
-        for (DataNode each : unit.getDataNodes()) {
+        List<DataNode> dataNodeList = unit.getDataNodes();
+        int len = dataNodeList.size();
+        for (int index = 0; index < len; index++) {
+            DataNode each = dataNodeList.get(index);
             if (tableUnit.getRoutingTable(each.getDataSourceName(), each.getTableName()).isPresent()) {
                 return true;
             }
