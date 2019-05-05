@@ -31,44 +31,43 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.naming.Context;
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Map;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SpringBootJndiTest.class)
 @SpringBootApplication
 @ActiveProfiles("jndi")
 public class SpringBootJndiTest {
-    
+
     private static final String TEST_DATASOURCE_URL = "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MYSQL";
-    
+
     private static final String JNDI_DATASOURCE_0 = "java:comp/env/jdbc/jndi0";
-    
+
     private static final String JNDI_DATASOURCE_1 = "java:comp/env/jdbc/jndi1";
-    
-    private static DataSource DATASOURCE_0;
-    
-    private static DataSource DATASOURCE_1;
-    
+
+    private static DataSource dataSource0;
+
+    private static DataSource dataSource1;
+
     @Autowired
     private DataSource dataSource;
-    
+
     @BeforeClass
     public static void setUpBeforeClass() {
         System.setProperty(Context.INITIAL_CONTEXT_FACTORY, TestJndiInitialContextFactory.class.getName());
-        DATASOURCE_0 = createNewDataSource("jndi0");
-        DATASOURCE_1 = createNewDataSource("jndi1");
-        TestJndiInitialContextFactory.bind(JNDI_DATASOURCE_0, DATASOURCE_0);
-        TestJndiInitialContextFactory.bind(JNDI_DATASOURCE_1, DATASOURCE_1);
+        dataSource0 = createNewDataSource("jndi0");
+        dataSource1 = createNewDataSource("jndi1");
+        TestJndiInitialContextFactory.bind(JNDI_DATASOURCE_0, dataSource0);
+        TestJndiInitialContextFactory.bind(JNDI_DATASOURCE_1, dataSource1);
     }
-    
+
     private static DataSource createNewDataSource(final String dsName) {
         BasicDataSource result = new BasicDataSource();
         result.setUrl(String.format(TEST_DATASOURCE_URL, dsName));
@@ -77,7 +76,7 @@ public class SpringBootJndiTest {
         result.setDriverClassName("org.h2.Driver");
         return result;
     }
-    
+
     @Test
     public void assertJndiDatasource() throws SQLException {
         assertThat(dataSource, instanceOf(ShardingDataSource.class));
@@ -88,11 +87,11 @@ public class SpringBootJndiTest {
         assertDatasource(dataSourceMap.get("jndi0"), String.format(TEST_DATASOURCE_URL, "jndi0"));
         assertDatasource(dataSourceMap.get("jndi1"), String.format(TEST_DATASOURCE_URL, "jndi1"));
     }
-    
-    private void assertDatasource(final DataSource actualDatasource, final String expectedJdbcUrl) throws SQLException {
-        String expectedjdbcUrlWithoutParams = expectedJdbcUrl.substring(0, expectedJdbcUrl.indexOf(";"));
+
+    private void assertDatasource(final DataSource actualDatasource, final String expectedJDBCUrl) throws SQLException {
+        String expectedJDBCUrlWithoutParameters = expectedJDBCUrl.substring(0, expectedJDBCUrl.indexOf(";"));
         try (Connection connection = actualDatasource.getConnection()) {
-            assertThat(connection.getMetaData().getURL(), is(expectedjdbcUrlWithoutParams));
+            assertThat(connection.getMetaData().getURL(), is(expectedJDBCUrlWithoutParameters));
         }
     }
 }
