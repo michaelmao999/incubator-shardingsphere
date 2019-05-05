@@ -182,12 +182,12 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     protected abstract Map<String, DataSource> getDataSourceMap();
     
     @Override
-    public final boolean getAutoCommit() {
+    public boolean getAutoCommit() {
         return autoCommit;
     }
     
     @Override
-    public final void setAutoCommit(final boolean autoCommit) throws SQLException {
+    public void setAutoCommit(final boolean autoCommit) throws SQLException {
         this.autoCommit = autoCommit;
         if (TransactionType.LOCAL == transactionType || isOnlyLocalTransactionValid()) {
             setAutoCommitForLocalTransaction(autoCommit);
@@ -210,7 +210,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final void commit() throws SQLException {
+    public void commit() throws SQLException {
         if (TransactionType.LOCAL == transactionType || isOnlyLocalTransactionValid()) {
             commitForLocalTransaction();
         } else {
@@ -229,7 +229,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final void rollback() throws SQLException {
+    public void rollback() throws SQLException {
         if (TransactionType.LOCAL == transactionType || isOnlyLocalTransactionValid()) {
             rollbackForLocalTransaction();
         } else {
@@ -248,7 +248,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final void close() throws SQLException {
+    public void close() throws SQLException {
         closed = true;
         MasterVisitedManager.clear();
         TransactionTypeHolder.clear();
@@ -268,17 +268,17 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final boolean isClosed() {
+    public boolean isClosed() {
         return closed;
     }
     
     @Override
-    public final boolean isReadOnly() {
+    public boolean isReadOnly() {
         return readOnly;
     }
     
     @Override
-    public final void setReadOnly(final boolean readOnly) throws SQLException {
+    public void setReadOnly(final boolean readOnly) throws SQLException {
         this.readOnly = readOnly;
         recordMethodInvocation(Connection.class, "setReadOnly", new Class[]{boolean.class}, new Object[]{readOnly});
         forceExecuteTemplate.execute(cachedConnections.values(), new ForceExecuteCallback<Connection>() {
@@ -291,7 +291,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final int getTransactionIsolation() throws SQLException {
+    public int getTransactionIsolation() throws SQLException {
         if (cachedConnections.values().isEmpty()) {
             return transactionIsolation;
         }
@@ -299,7 +299,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final void setTransactionIsolation(final int level) throws SQLException {
+    public void setTransactionIsolation(final int level) throws SQLException {
         transactionIsolation = level;
         recordMethodInvocation(Connection.class, "setTransactionIsolation", new Class[]{int.class}, new Object[]{level});
         forceExecuteTemplate.execute(cachedConnections.values(), new ForceExecuteCallback<Connection>() {
@@ -314,7 +314,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     // ------- Consist with MySQL driver implementation -------
     
     @Override
-    public final SQLWarning getWarnings() {
+    public SQLWarning getWarnings() {
         return null;
     }
     
@@ -323,11 +323,11 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final int getHoldability() {
+    public int getHoldability() {
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
     
     @Override
-    public final void setHoldability(final int holdability) {
+    public void setHoldability(final int holdability) {
     }
 }
