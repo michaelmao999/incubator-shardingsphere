@@ -5,10 +5,7 @@ import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OracleSQLFunctionExecutor implements SQLFunctionExector {
 
@@ -22,8 +19,28 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
             Date dateObj = converToDate(parameters.get(0), parameters.get(1), sqlparameters);
             functionExpression.setValue(dateObj);
             return dateObj;
+        } else if ("trunc".equals(function)) {
+            if (parameters != null && parameters.size() == 1) {
+                // trunc(sysdate -1 ) trunc(column)
+            } else if (parameters != null && parameters.size() == 2) {
+                //trunc(sysdate - 1, 'dd')
+                if (sqlExpressionToString(parameters.get(0)).indexOf("sysdate") >= 0) {
+                    Date dateObj = convertSysdate(parameters.get(0), parameters.get(1), sqlparameters);
+                    functionExpression.setValue(dateObj);
+                    return dateObj;
+                }
+            }
         }
         return null;
+    }
+
+    private String sqlExpressionToString(SQLExpression expression) {
+        if (expression instanceof SQLIdentifierExpression) {
+            return ((SQLIdentifierExpression)expression).getName().toLowerCase();
+        } else if (expression instanceof SQLFunctionExpression) {
+            return expression.toString();
+        }
+        return expression.toString();
     }
 
 
@@ -62,6 +79,79 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
         }
         return result;
     }
+
+    private static Date convertSysdate(SQLExpression date1, SQLExpression dateFormat, final List<Object> sqlparameters) {
+        Calendar sysdate = Calendar.getInstance();
+        if (date1 instanceof SQLFunctionExpression) {
+            SQLFunctionExpression sysdateFunction = (SQLFunctionExpression) date1;
+            List<SQLExpression> sysdateExpressionList = sysdateFunction.getParameters();
+            int len = sysdateExpressionList.size();
+            //1: plus   2 : subtract
+            //sysdate - 1
+            int isPlus = 0;
+            Integer value = null;
+            for (int index = 1; index < len; index++) {
+                SQLExpression sqlExpression = sysdateExpressionList.get(index);
+                if (sqlExpression instanceof  SQLIdentifierExpression) {
+                    if ("-".equals(((SQLIdentifierExpression)sqlExpression).getName())) {
+                        isPlus = 1;
+                    } else if ("+".equals(((SQLIdentifierExpression)sqlExpression).getName())) {
+                        isPlus = 2;
+                    } else {
+                        value = Integer.valueOf(((SQLIdentifierExpression)sqlExpression).getName());
+                    }
+                } else if (sqlExpression instanceof SQLTextExpression) {
+                    value = Integer.valueOf(((SQLTextExpression)sqlExpression).getText());
+                } else if (sqlExpression instanceof SQLParameterMarkerExpression) {
+                    Object valueObj =  sqlparameters.get(((SQLParameterMarkerExpression) sqlExpression).getIndex());
+                    value = Integer.valueOf(valueObj.toString());
+                } else if (sqlExpression instanceof  SQLNumberExpression) {
+                    value = Integer.valueOf(((SQLNumberExpression) sqlExpression).getNumber() +  "");
+                    isPlus = 2;
+                }
+                if (value != null) {
+                    if (isPlus == 1) {
+                        sysdate.add(Calendar.DATE, -1* value);
+                    } else if (isPlus == 2) {
+                        sysdate.add(Calendar.DATE, value);
+                    }
+                    isPlus = 0;
+                    value = null;
+                }
+            }
+        }
+        String formatText = null;
+        if (dateFormat instanceof SQLIdentifierExpression) {
+            formatText = ((SQLIdentifierExpression)dateFormat).getName();
+        } else if (dateFormat instanceof SQLTextExpression) {
+            formatText = ((SQLTextExpression)dateFormat).getText();
+        } else if (dateFormat instanceof SQLParameterMarkerExpression) {
+            formatText = (String) sqlparameters.get(((SQLParameterMarkerExpression) dateFormat).getIndex());
+        }
+        if (sysdate == null || formatText == null) {
+            return null;
+        }
+        Date result = null;
+        try {
+            //trunc(SYSDATE , 'DD')
+            if (formatText.indexOf("DD") >= 0 || formatText.indexOf("J") >= 0) {
+                result = sysdate.getTime();
+                //trunc(SYSDATE , 'RM')
+            } else  if (formatText.indexOf("MM") >= 0 || formatText.indexOf("MO") >= 0 || formatText.indexOf("RM") >= 0) {
+                sysdate.set(Calendar.DATE, 1);
+                result = sysdate.getTime();
+            } else  if (formatText.indexOf("SYYYY") >= 0 || formatText.indexOf("YYYY") >= 0 || formatText.indexOf("YEAR") >= 0) {
+                sysdate.set(Calendar.DATE, 1);
+                sysdate.set(Calendar.MONTH, 1);
+                result = sysdate.getTime();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
 
     private static Date convertJavaDate(String format, String date, String splitChar) throws java.text.ParseException {
         Map<String, String> ymd = new HashMap<String, String>();

@@ -22,9 +22,8 @@ import org.apache.shardingsphere.core.parse.antlr.constant.QuoteCharacter;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.TableToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
-import org.apache.shardingsphere.core.parse.old.lexer.token.Assist;
-import org.apache.shardingsphere.core.parse.old.lexer.token.Literals;
-import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
+import org.apache.shardingsphere.core.parse.old.lexer.dialect.oracle.OracleKeyword;
+import org.apache.shardingsphere.core.parse.old.lexer.token.*;
 import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.parse.util.SQLUtil;
 import org.apache.shardingsphere.core.util.NumberUtil;
@@ -50,16 +49,21 @@ public final class BasicExpressionParser {
      * @return expression
      */
     public SQLExpression parse(final SQLStatement sqlStatement) {
+        return parse(sqlStatement, false);
+    }
+
+    public SQLExpression parse(final SQLStatement sqlStatement, boolean isInFunction) {
         int beginPosition = lexerEngine.getCurrentToken().getEndPosition();
-        SQLExpression result = parseExpression(sqlStatement);
+        SQLExpression result = parseExpression(sqlStatement, isInFunction);
         if (result instanceof SQLPropertyExpression) {
             setTableToken(sqlStatement, beginPosition, (SQLPropertyExpression) result);
         }
         return result;
     }
+
     
     // TODO complete more expression parse
-    private SQLExpression parseExpression(final SQLStatement sqlStatement) {
+    private SQLExpression parseExpression(final SQLStatement sqlStatement, boolean isInFunction) {
         String literals = lexerEngine.getCurrentToken().getLiterals();
         final int beginPosition = lexerEngine.getCurrentToken().getEndPosition() - literals.length();
         final SQLExpression expression = getExpression(literals, sqlStatement);
@@ -74,6 +78,15 @@ public final class BasicExpressionParser {
         //Parse SQL function, such as to_date('05-01-2019','MM-DD-YYYY')
         if (lexerEngine.equalOne(Symbol.LEFT_PAREN) && expression instanceof SQLIdentifierExpression) {
             return parseFunction(((SQLIdentifierExpression)expression).getName(), sqlStatement );
+        }
+        String literal2 = lexerEngine.getCurrentToken().getLiterals();
+        if (isInFunction && expression instanceof SQLIdentifierExpression
+                && (lexerEngine.equalAny(Symbol.PLUS, Symbol.SUB)
+                || ((literal2.startsWith("+") || literal2.startsWith("-") ))
+                    && lexerEngine.getCurrentToken().getType() == Literals.INT)) {
+            List<SQLExpression> parameters = new ArrayList<SQLExpression>();
+            parameters.add(expression);
+            return parsePureExpression(parameters, sqlStatement);
         }
         if (lexerEngine.equalOne(Symbol.LEFT_PAREN)) {
             lexerEngine.skipParentheses(sqlStatement);
@@ -91,7 +104,7 @@ public final class BasicExpressionParser {
         if (Symbol.LEFT_PAREN == lexerEngine.getCurrentToken().getType()) {
             while (true) {
                 lexerEngine.nextToken();
-                SQLExpression parameter = parse(sqlStatement);
+                SQLExpression parameter = parse(sqlStatement, true);
                 parameters.add(parameter);
                 if (lexerEngine.equalOne(Symbol.COMMA)) {
                     continue;
@@ -114,6 +127,22 @@ public final class BasicExpressionParser {
         return new SQLFunctionExpression(functionName.toLowerCase(), parameters);
     }
 
+    public SQLFunctionExpression parsePureExpression(final List<SQLExpression> parameters, final SQLStatement sqlStatement) {
+        int count = 0;
+        while (true) {
+            Token currentToken = lexerEngine.getCurrentToken();
+            final SQLExpression expression = getExpression(currentToken.getLiterals(), sqlStatement);
+            parameters.add(expression);
+            lexerEngine.nextToken();
+            if (lexerEngine.getCurrentToken().getType() == Symbol.COMMA ||
+                    Assist.END == lexerEngine.getCurrentToken().getType()
+                    || (Symbol.RIGHT_PAREN == lexerEngine.getCurrentToken().getType() && 0 == count)) {
+                break;
+            }
+        }
+        return new SQLFunctionExpression(null, parameters);
+    }
+
 
     private SQLExpression getExpression(final String literals, final SQLStatement sqlStatement) {
         if (lexerEngine.equalOne(Symbol.QUESTION)) {
@@ -132,7 +161,10 @@ public final class BasicExpressionParser {
         if (lexerEngine.equalOne(Literals.HEX)) {
             return new SQLNumberExpression(NumberUtil.getExactlyNumber(literals, 16));
         }
-        if (lexerEngine.equalOne(Literals.IDENTIFIER)) {
+        boolean isKeyword = lexerEngine.getCurrentToken().getType() instanceof DefaultKeyword;
+        isKeyword = isKeyword || lexerEngine.getCurrentToken().getType() instanceof Symbol;
+        isKeyword = isKeyword || lexerEngine.getCurrentToken().getType() instanceof OracleKeyword;
+        if (lexerEngine.equalOne(Literals.IDENTIFIER )|| isKeyword) {
             return new SQLIdentifierExpression(SQLUtil.getExactlyValue(literals));
         }
         return new SQLIgnoreExpression(literals);

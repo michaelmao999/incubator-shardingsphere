@@ -50,16 +50,23 @@ public final class InsertValue {
             if (each instanceof SQLParameterMarkerExpression) {
                 result++;
             } else if (each instanceof SQLFunctionExpression) {
-                SQLFunctionExpression functionExpression = (SQLFunctionExpression) each;
-                List<SQLExpression> subExpressionList = functionExpression.getParameters();
-                if (subExpressionList != null) {
-                    int len = subExpressionList.size();
-                    for (int index = 0; index < len; index++) {
-                        SQLExpression subExpress = subExpressionList.get(index);
-                        if (subExpress instanceof SQLParameterMarkerExpression) {
-                            result++;
-                        }
-                    }
+                result = result + countParameter((SQLFunctionExpression) each);
+            }
+        }
+        return result;
+    }
+
+    private int countParameter(SQLFunctionExpression functionExpression) {
+        int result = 0;
+        List<SQLExpression> subExpressionList = functionExpression.getParameters();
+        if (subExpressionList != null) {
+            int len = subExpressionList.size();
+            for (int index = 0; index < len; index++) {
+                SQLExpression subExpress = subExpressionList.get(index);
+                if (subExpress instanceof SQLParameterMarkerExpression) {
+                    result++;
+                } else if (subExpress instanceof SQLFunctionExpression) {
+                    result = result + countParameter((SQLFunctionExpression) subExpress);
                 }
             }
         }

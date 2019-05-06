@@ -34,6 +34,9 @@ public class SQLFunctionExpression implements SQLExpression {
     }
 
     public String toFunctionSQL() {
+        if (function == null || function.length() == 0) {
+            return toPureExpression();
+        }
         StringBuilder builder = new StringBuilder();
         builder.append(function).append('(');
         if (parameters != null) {
@@ -51,6 +54,8 @@ public class SQLFunctionExpression implements SQLExpression {
                     builder.append('\'');
                 } else if (sqlExpression instanceof SQLIgnoreExpression) {
                     builder.append(((SQLIgnoreExpression) sqlExpression).getExpression());
+                } else if (sqlExpression instanceof SQLIdentifierExpression) {
+                    builder.append(((SQLIdentifierExpression) sqlExpression).getName().toLowerCase());
                 } else if (sqlExpression instanceof SQLFunctionExpression) {
                     builder.append(((SQLFunctionExpression) sqlExpression).toFunctionSQL());
                 } else {
@@ -61,4 +66,35 @@ public class SQLFunctionExpression implements SQLExpression {
         builder.append(')');
         return builder.toString();
     }
+
+    private String toPureExpression() {
+        StringBuilder builder = new StringBuilder();
+        if (parameters != null) {
+            int len = parameters.size();
+            for (int index = 0; index < len; index++) {
+                SQLExpression sqlExpression = parameters.get(index);
+                if (sqlExpression instanceof SQLParameterMarkerExpression) {
+                    builder.append("?");
+                } else if (sqlExpression instanceof SQLTextExpression) {
+                    builder.append('\'');
+                    builder.append(((SQLTextExpression) sqlExpression).getText());
+                    builder.append('\'');
+                } else if (sqlExpression instanceof SQLIgnoreExpression) {
+                    builder.append(((SQLIgnoreExpression) sqlExpression).getExpression());
+                } else if (sqlExpression instanceof SQLIdentifierExpression) {
+                    builder.append(((SQLIdentifierExpression) sqlExpression).getName().toLowerCase());
+                } else if (sqlExpression instanceof SQLFunctionExpression) {
+                    builder.append(((SQLFunctionExpression) sqlExpression).toFunctionSQL());
+                } else {
+                    builder.append(String.valueOf(((SQLNumberExpression) sqlExpression).getNumber()));
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+    public String toString() {
+        return toFunctionSQL();
+    }
+
 }
