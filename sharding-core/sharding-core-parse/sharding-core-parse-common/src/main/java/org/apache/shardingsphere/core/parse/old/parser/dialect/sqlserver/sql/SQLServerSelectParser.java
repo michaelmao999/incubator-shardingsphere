@@ -44,11 +44,11 @@ public final class SQLServerSelectParser extends AbstractSelectParser {
     }
     
     @Override
-    protected void parseInternal(final SelectStatement selectStatement) {
+    protected void parseInternal(final SelectStatement selectStatement, boolean isSubGroup) {
         parseTop(selectStatement);
         parseSelectList(selectStatement, getItems());
         parseFrom(selectStatement);
-        parseWhere(getShardingRule(), selectStatement, getItems());
+        parseWhere(getShardingRule(), selectStatement, getItems(), isSubGroup);
         parseGroupBy(selectStatement);
         parseHaving();
         parseOrderBy(selectStatement);

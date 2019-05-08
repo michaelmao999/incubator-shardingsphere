@@ -63,9 +63,11 @@ public class Group implements SQLCondition{
                 }
             }
         }
-        SQLCondition sqlCondition = expressions.get(expressions.size() - 1);
-        if (sqlCondition instanceof  And || sqlCondition instanceof  Or) {
-            expressions.remove(expressions.size() - 1);
+        if (expressions.size() > 0) {
+            SQLCondition sqlCondition = expressions.get(expressions.size() - 1);
+            if (sqlCondition instanceof  And || sqlCondition instanceof  Or) {
+                expressions.remove(expressions.size() - 1);
+            }
         }
         return this;
     }

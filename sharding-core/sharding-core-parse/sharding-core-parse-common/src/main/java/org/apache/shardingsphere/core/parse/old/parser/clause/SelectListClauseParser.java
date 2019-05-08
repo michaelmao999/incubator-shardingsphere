@@ -18,13 +18,16 @@
 package org.apache.shardingsphere.core.parse.old.parser.clause;
 
 import com.google.common.base.Optional;
+import com.sun.org.apache.xpath.internal.compiler.Keywords;
 import lombok.Getter;
 import org.apache.shardingsphere.core.constant.AggregationType;
 import org.apache.shardingsphere.core.parse.antlr.constant.QuoteCharacter;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.AggregationDistinctToken;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.TableToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
+import org.apache.shardingsphere.core.parse.old.lexer.token.Assist;
 import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Keyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
@@ -77,8 +80,9 @@ public abstract class SelectListClauseParser implements SQLClauseParser {
      * @param items           select items
      */
     public void parse(final SelectStatement selectStatement, final List<SelectItem> items) {
+        Set<SelectItem> itemSet = selectStatement.getItems();
         do {
-            selectStatement.getItems().addAll(parseSelectItems(selectStatement));
+            itemSet.addAll(parseSelectItems(selectStatement));
         } while (lexerEngine.skipIfEqualType(Symbol.COMMA));
         selectStatement.setSelectListStopIndex(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length());
         items.addAll(selectStatement.getItems());
@@ -102,6 +106,8 @@ public abstract class SelectListClauseParser implements SQLClauseParser {
         } else if (isStarSelectItem()) {
             selectStatement.setContainStar(true);
             result.add(parseStarSelectItem());
+        } else if (isCaseWhenSelectItem()) {
+            result.add(parseCaseWhenSelectItem(selectStatement));
         } else if (isAggregationSelectItem()) {
             result.add(parseAggregationSelectItem(selectStatement));
             parseRestSelectItem(selectStatement);
@@ -189,9 +195,63 @@ public abstract class SelectListClauseParser implements SQLClauseParser {
                 + parseRestSelectItem(selectStatement)), aliasExpressionParser.parseSelectItemAlias());
         
     }
-    
+
+    private SelectItem parseCaseWhenSelectItem(final SelectStatement selectStatement) {
+        StringBuilder result = new StringBuilder();
+        int beginPosition = lexerEngine.getCurrentToken().getEndPosition();
+        result.append(lexerEngine.getCurrentToken().getLiterals()).append(" ");
+        int level = 0;
+        lexerEngine.nextToken();
+        while (true) {
+            if (lexerEngine.equalOne(DefaultKeyword.END) && level == 0 ) {
+                break;
+            }
+            if (lexerEngine.equalOne(DefaultKeyword.CASE)) {
+                level ++;
+            }
+            if (lexerEngine.equalOne(DefaultKeyword.END)) {
+                level --;
+            }
+            lexerEngine.nextToken();
+        }
+        result.append(lexerEngine.getInput().substring(beginPosition, lexerEngine.getCurrentToken().getEndPosition()));
+        lexerEngine.nextToken();
+
+        return new CommonSelectItem(SQLUtil.getExactlyValue(result
+                + parseRestSelectItem(selectStatement)), aliasExpressionParser.parseSelectItemAlias());
+
+    }
+    /**
+     * skip all tokens that inside parentheses.
+     *
+     * @param sqlStatement SQL statement
+     * @return skipped string
+     */
+    public String skipCaseWhenSelectItem(final SQLStatement sqlStatement) {
+        StringBuilder result = new StringBuilder();
+        final int beginPosition = lexerEngine.getCurrentToken().getEndPosition();
+        result.append(Symbol.LEFT_PAREN.getLiterals());
+        lexerEngine.nextToken();
+        while (true) {
+            if (lexerEngine.equalOne(DefaultKeyword.END)) {
+                break;
+            }
+            lexerEngine.nextToken();
+        }
+        result.append(lexerEngine.getInput().substring(beginPosition, lexerEngine.getCurrentToken().getEndPosition()));
+        lexerEngine.nextToken();
+
+        return result.toString();
+    }
+
+
+
     private boolean isAggregationSelectItem() {
         return lexerEngine.equalAny(DefaultKeyword.MAX, DefaultKeyword.MIN, DefaultKeyword.SUM, DefaultKeyword.AVG, DefaultKeyword.COUNT);
+    }
+
+    private boolean isCaseWhenSelectItem() {
+        return lexerEngine.equalOne(DefaultKeyword.CASE);
     }
     
     private SelectItem parseAggregationSelectItem(final SelectStatement selectStatement) {

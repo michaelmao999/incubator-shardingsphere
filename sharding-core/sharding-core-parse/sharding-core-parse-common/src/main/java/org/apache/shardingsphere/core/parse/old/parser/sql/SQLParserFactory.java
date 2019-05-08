@@ -30,10 +30,12 @@ import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DQLStatement
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.tcl.TCLStatement;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.dialect.mysql.MySQLKeyword;
+import org.apache.shardingsphere.core.parse.old.lexer.dialect.oracle.OracleKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.dialect.postgresql.PostgreSQLKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Keyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.TokenType;
+import org.apache.shardingsphere.core.parse.old.parser.dialect.oracle.sql.OracleMergeParser;
 import org.apache.shardingsphere.core.parse.old.parser.exception.SQLParsingUnsupportedException;
 import org.apache.shardingsphere.core.parse.old.parser.sql.dal.describe.DescribeParserFactory;
 import org.apache.shardingsphere.core.parse.old.parser.sql.dal.set.SetParserFactory;
@@ -75,6 +77,24 @@ public final class SQLParserFactory {
                 return new AntlrParsingEngine(dbType, sql, shardingRule, shardingTableMetaData);
             }
             return getDQLParser(dbType, shardingRule, lexerEngine, shardingTableMetaData);
+        }
+        if (OracleKeyword.MERGE == tokenType) {
+            /**
+             MERGE INTO target_table
+             USING source_table
+             ON search_condition
+             WHEN MATCHED THEN
+             UPDATE SET col1 = value1, col2 = value2,...
+             WHERE <update_condition>
+             [DELETE WHERE <delete_condition>]
+             WHEN NOT MATCHED THEN
+             INSERT (col1,col2,...)
+             values(value1,value2,...)
+             WHERE <insert_condition>;
+             */
+            if (DatabaseType.Oracle == dbType) {
+                return new OracleMergeParser(shardingRule, lexerEngine, shardingTableMetaData, sql);
+            }
         }
         if (DMLStatement.isDML(tokenType)) {
             if (DatabaseType.MySQL == dbType || DatabaseType.H2 == dbType) {

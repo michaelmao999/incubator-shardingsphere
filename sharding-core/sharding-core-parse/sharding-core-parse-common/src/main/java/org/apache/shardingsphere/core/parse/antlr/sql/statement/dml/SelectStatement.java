@@ -73,7 +73,7 @@ public final class SelectStatement extends DQLStatement {
     
     private SelectStatement parentStatement;
     
-    private SelectStatement subqueryStatement;
+    protected SelectStatement subqueryStatement;
     
     private Collection<OrCondition> subqueryConditions = new LinkedList<>();
     

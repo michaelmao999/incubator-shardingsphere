@@ -18,7 +18,6 @@
 package org.apache.shardingsphere.core.parse.old.parser.sql.dml.update;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DMLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.UpdateStatement;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
@@ -45,19 +44,19 @@ public abstract class AbstractUpdateParser implements SQLParser {
     private final AbstractUpdateClauseParserFacade updateClauseParserFacade;
     
     @Override
-    public final DMLStatement parse() {
+    public final UpdateStatement parse() {
         lexerEngine.nextToken();
         lexerEngine.skipAll(getSkippedKeywordsBetweenUpdateAndTable());
         lexerEngine.unsupportedIfEqual(getUnsupportedKeywordsBetweenUpdateAndTable());
-        DMLStatement result = new UpdateStatement();
+        UpdateStatement result = new UpdateStatement();
         updateClauseParserFacade.getTableReferencesClauseParser().parse(result, true);
         updateClauseParserFacade.getUpdateSetItemsClauseParser().parse(result);
         lexerEngine.skipUntil(DefaultKeyword.WHERE);
-        updateClauseParserFacade.getWhereClauseParser().parse(shardingRule, result, Collections.<SelectItem>emptyList());
+        updateClauseParserFacade.getWhereClauseParser().parse(shardingRule, result, Collections.<SelectItem>emptyList(), false);
         return result;
     }
     
-    protected abstract Keyword[] getSkippedKeywordsBetweenUpdateAndTable();
-    
-    protected abstract Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable();
+    public abstract Keyword[] getSkippedKeywordsBetweenUpdateAndTable();
+
+    public abstract Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable();
 }

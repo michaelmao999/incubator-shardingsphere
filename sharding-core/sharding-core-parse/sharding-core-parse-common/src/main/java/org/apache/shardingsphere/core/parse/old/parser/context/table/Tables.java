@@ -36,7 +36,10 @@ import java.util.TreeSet;
 public final class Tables {
     
     private final List<Table> tables = new ArrayList<>();
-    
+
+    public List<Table> getTables() {
+        return this.tables;
+    }
     /**
      * Add table.
      * 
@@ -77,6 +80,10 @@ public final class Tables {
     public String getSingleTableName() {
         Preconditions.checkArgument(!isEmpty());
         return tables.get(0).getName();
+    }
+
+    public String getSingleTableAlias() {
+        return tables.get(0).getAlias().get();
     }
     
     /**

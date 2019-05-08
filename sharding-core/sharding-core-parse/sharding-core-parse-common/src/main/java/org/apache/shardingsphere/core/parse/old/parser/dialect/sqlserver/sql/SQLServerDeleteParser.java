@@ -37,11 +37,11 @@ public final class SQLServerDeleteParser extends AbstractDeleteParser {
     }
     
     @Override
-    protected Keyword[] getSkippedKeywordsBetweenDeleteAndTable() {
+    public Keyword[] getSkippedKeywordsBetweenDeleteAndTable() {
         return new Keyword[] {DefaultKeyword.FROM};
     }
-    
-    protected Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable() {
+
+    public Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable() {
         return new Keyword[] {SQLServerKeyword.TOP, SQLServerKeyword.OUTPUT};
     }
 }

@@ -45,11 +45,11 @@ public final class MySQLSelectParser extends AbstractSelectParser {
     }
     
     @Override
-    protected void parseInternal(final SelectStatement selectStatement) {
+    protected void parseInternal(final SelectStatement selectStatement, boolean isSubGroup) {
         parseSelectOption();
         parseSelectList(selectStatement, getItems());
         parseFrom(selectStatement);
-        parseWhere(getShardingRule(), selectStatement, getItems());
+        parseWhere(getShardingRule(), selectStatement, getItems(), isSubGroup);
         parseGroupBy(selectStatement);
         parseHaving();
         parseOrderBy(selectStatement);

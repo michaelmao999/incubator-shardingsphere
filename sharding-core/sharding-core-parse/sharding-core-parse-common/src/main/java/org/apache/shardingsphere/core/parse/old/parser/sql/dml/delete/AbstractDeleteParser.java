@@ -18,7 +18,6 @@
 package org.apache.shardingsphere.core.parse.old.parser.sql.dml.delete;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DMLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DeleteStatement;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
@@ -45,18 +44,18 @@ public abstract class AbstractDeleteParser implements SQLParser {
     private final AbstractDeleteClauseParserFacade deleteClauseParserFacade;
     
     @Override
-    public final DMLStatement parse() {
+    public final DeleteStatement parse() {
         lexerEngine.nextToken();
         lexerEngine.skipAll(getSkippedKeywordsBetweenDeleteAndTable());
         lexerEngine.unsupportedIfEqual(getUnsupportedKeywordsBetweenDeleteAndTable());
-        DMLStatement result = new DeleteStatement();
+        DeleteStatement result = new DeleteStatement();
         deleteClauseParserFacade.getTableReferencesClauseParser().parse(result, true);
         lexerEngine.skipUntil(DefaultKeyword.WHERE);
-        deleteClauseParserFacade.getWhereClauseParser().parse(shardingRule, result, Collections.<SelectItem>emptyList());
+        deleteClauseParserFacade.getWhereClauseParser().parse(shardingRule, result, Collections.<SelectItem>emptyList(), false);
         return result;
     }
-    
-    protected abstract Keyword[] getSkippedKeywordsBetweenDeleteAndTable();
-    
-    protected abstract Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable();
+
+    public abstract Keyword[] getSkippedKeywordsBetweenDeleteAndTable();
+
+    public abstract Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable();
 }

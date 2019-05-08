@@ -36,12 +36,12 @@ public final class SQLServerUpdateParser extends AbstractUpdateParser {
     }
     
     @Override
-    protected Keyword[] getSkippedKeywordsBetweenUpdateAndTable() {
+    public Keyword[] getSkippedKeywordsBetweenUpdateAndTable() {
         return new Keyword[0];
     }
     
     @Override
-    protected Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable() {
+    public Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable() {
         return new Keyword[] {SQLServerKeyword.TOP};
     }
 }

@@ -36,12 +36,12 @@ public final class MySQLUpdateParser extends AbstractUpdateParser {
     }
     
     @Override
-    protected Keyword[] getSkippedKeywordsBetweenUpdateAndTable() {
+    public Keyword[] getSkippedKeywordsBetweenUpdateAndTable() {
         return new Keyword[] {MySQLKeyword.LOW_PRIORITY, MySQLKeyword.IGNORE};
     }
     
     @Override
-    protected Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable() {
+    public Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable() {
         return new Keyword[0];
     }
 }

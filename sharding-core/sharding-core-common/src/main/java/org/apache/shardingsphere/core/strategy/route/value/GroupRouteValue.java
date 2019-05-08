@@ -80,9 +80,11 @@ public class GroupRouteValue implements RouteValueCondition{
                 }
             }
         }
-        RouteValueCondition sqlCondition = conditionList.get(conditionList.size() - 1);
-        if (sqlCondition instanceof  AndValue || sqlCondition instanceof  OrValue) {
-            conditionList.remove(conditionList.size() - 1);
+        if (conditionList.size() > 0) {
+            RouteValueCondition sqlCondition = conditionList.get(conditionList.size() - 1);
+            if (sqlCondition instanceof  AndValue || sqlCondition instanceof  OrValue) {
+                conditionList.remove(conditionList.size() - 1);
+            }
         }
         return this;
     }

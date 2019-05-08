@@ -36,12 +36,12 @@ public final class OracleDeleteParser extends AbstractDeleteParser {
     }
     
     @Override
-    protected Keyword[] getSkippedKeywordsBetweenDeleteAndTable() {
+    public Keyword[] getSkippedKeywordsBetweenDeleteAndTable() {
         return new Keyword[] {DefaultKeyword.FROM};
     }
     
     @Override
-    protected Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable() {
+    public Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable() {
         return new Keyword[0];
     }
 }

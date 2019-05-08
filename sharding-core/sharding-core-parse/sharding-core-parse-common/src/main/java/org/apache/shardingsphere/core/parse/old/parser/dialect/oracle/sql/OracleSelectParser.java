@@ -48,10 +48,10 @@ public final class OracleSelectParser extends AbstractSelectParser {
     }
     
     @Override
-    protected void parseInternal(final SelectStatement selectStatement) {
+    protected void parseInternal(final SelectStatement selectStatement, boolean isSubGroup) {
         parseSelectList(selectStatement, getItems());
         parseFrom(selectStatement);
-        parseWhere(getShardingRule(), selectStatement, getItems());
+        parseWhere(getShardingRule(), selectStatement, getItems(), isSubGroup);
         parseHierarchicalQueryClause();
         parseGroupBy(selectStatement);
         parseHaving();

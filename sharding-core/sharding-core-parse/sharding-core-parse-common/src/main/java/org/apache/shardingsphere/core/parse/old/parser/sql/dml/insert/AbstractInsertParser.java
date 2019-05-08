@@ -20,7 +20,6 @@ package org.apache.shardingsphere.core.parse.old.parser.sql.dml.insert;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.apache.shardingsphere.core.metadata.table.ShardingTableMetaData;
-import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DMLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.InsertStatement;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
@@ -61,7 +60,7 @@ public abstract class AbstractInsertParser implements SQLParser {
     }
     
     @Override
-    public final DMLStatement parse() {
+    public final InsertStatement parse() {
         lexerEngine.nextToken();
         InsertStatement result = new InsertStatement();
         result.setLogicSQL(sql);

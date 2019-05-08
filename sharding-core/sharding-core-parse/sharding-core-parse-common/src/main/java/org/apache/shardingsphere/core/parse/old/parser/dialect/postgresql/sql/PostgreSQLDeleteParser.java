@@ -37,12 +37,12 @@ public final class PostgreSQLDeleteParser extends AbstractDeleteParser {
     }
     
     @Override
-    protected Keyword[] getSkippedKeywordsBetweenDeleteAndTable() {
+    public Keyword[] getSkippedKeywordsBetweenDeleteAndTable() {
         return new Keyword[] {DefaultKeyword.FROM, PostgreSQLKeyword.ONLY};
     }
     
     @Override
-    protected Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable() {
+    public Keyword[] getUnsupportedKeywordsBetweenDeleteAndTable() {
         return new Keyword[0];
     }
 }

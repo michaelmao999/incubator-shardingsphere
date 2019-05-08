@@ -59,6 +59,8 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     
     private final BasicExpressionParser basicExpressionParser;
 
+    private static Keyword[] cachedOtherConditionOperators;
+
     public WhereClauseParser(final DatabaseType databaseType, final LexerEngine lexerEngine) {
         this.databaseType = databaseType;
         this.lexerEngine = lexerEngine;
@@ -73,22 +75,15 @@ public abstract class WhereClauseParser implements SQLClauseParser {
      * @param sqlStatement SQL statement
      * @param items select items
      */
-    public void parse(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
+    public void parse(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items, boolean isSubGroup) {
         aliasExpressionParser.parseTableAlias();
         if (lexerEngine.skipIfEqualType(DefaultKeyword.WHERE)) {
-            parseWhere2(shardingRule, sqlStatement, items);
+            parseWhere(shardingRule, sqlStatement, items, isSubGroup);
         }
     }
     
-    private void parseWhere(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
-        OrCondition orCondition = parseOr(shardingRule, sqlStatement, items).optimize();
-        if (1 != orCondition.getAndConditions().size() || !(orCondition.getAndConditions().get(0).getConditions().get(0) instanceof NullCondition)) {
-            sqlStatement.getRouteConditions().getOrCondition().getAndConditions().addAll(orCondition.getAndConditions());
-        }
-    }
-
-    private void parseWhere2(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
-        Group group = parseGroup(shardingRule, sqlStatement, items, false)
+    public void parseWhere(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items, boolean isSubGroup) {
+        Group group = parseGroup(shardingRule, sqlStatement, items, isSubGroup)
                 .optimize();
         if (group.size() > 0) {
             sqlStatement.getRouteCondition().add(group);
@@ -105,10 +100,11 @@ public abstract class WhereClauseParser implements SQLClauseParser {
             TokenType tokenType = lexerEngine.getCurrentToken().getType();
             if (tokenType == DefaultKeyword.GROUP || tokenType == DefaultKeyword.ORDER
                     || tokenType == DefaultKeyword.UNION || tokenType == DefaultKeyword.MINUS
-                    || (isSubGroup && tokenType == Symbol.RIGHT_PAREN)
-            ) {
+                    || tokenType == DefaultKeyword.WHEN   //merge into table using table2 on condition when match
+                    || (isSubGroup && tokenType == Symbol.RIGHT_PAREN)) {
                 break;
             }
+
             if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
                 Group subOrCondition = parseGroup(shardingRule, sqlStatement, items, true);
                 lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
@@ -126,67 +122,14 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         return result;
     }
 
-    
-    private OrCondition parseOr(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
-        OrCondition result = new OrCondition();
-        do {
-            if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
-                OrCondition subOrCondition = parseOr(shardingRule, sqlStatement, items);
-                lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
-                OrCondition orCondition = null;
-                if (lexerEngine.skipIfEqualType(DefaultKeyword.AND)) {
-                    orCondition = parseAnd(shardingRule, sqlStatement, items);
-                }
-                result.getAndConditions().addAll(merge(subOrCondition, orCondition).getAndConditions());
-            } else {
-                OrCondition orCondition = parseAnd(shardingRule, sqlStatement, items);
-                result.getAndConditions().addAll(orCondition.getAndConditions());
-            }
-        } while (lexerEngine.skipIfEqualType(DefaultKeyword.OR));
-        return result;
-    }
-    
-    private OrCondition parseAnd(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
-        OrCondition result = new OrCondition();
-        do {
-            if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
-                OrCondition subOrCondition = parseOr(shardingRule, sqlStatement, items);
-                lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
-                result = merge(result, subOrCondition);
-            } else {
-                Condition condition = parseComparisonCondition(shardingRule, sqlStatement, items);
-                skipsDoubleColon();
-                result = merge(result, new OrCondition(condition));
-            }
-        } while (lexerEngine.skipIfEqualType(DefaultKeyword.AND));
-        return result;
-    }
-    
-    private OrCondition merge(final OrCondition orCondition1, final OrCondition orCondition2) {
-        if (null == orCondition1 || orCondition1.getAndConditions().isEmpty()) {
-            return orCondition2;
+    private Keyword[] getCachedOtherConditionOperators() {
+        if (cachedOtherConditionOperators == null) {
+            List<Keyword> otherConditionOperators = new LinkedList<>(Arrays.asList(getCustomizedOtherConditionOperators()));
+            otherConditionOperators.addAll(
+                    Arrays.asList(Symbol.LT, Symbol.LT_EQ, Symbol.GT, Symbol.GT_EQ, Symbol.LT_GT, Symbol.BANG_EQ, Symbol.BANG_GT, Symbol.BANG_LT, DefaultKeyword.LIKE, DefaultKeyword.IS));
+            cachedOtherConditionOperators = otherConditionOperators.toArray(new Keyword[otherConditionOperators.size()]);
         }
-        if (null == orCondition2 || orCondition2.getAndConditions().isEmpty()) {
-            return orCondition1;
-        }
-        OrCondition result = new OrCondition();
-        for (AndCondition each1 : orCondition1.getAndConditions()) {
-            for (AndCondition each2 : orCondition2.getAndConditions()) {
-                result.getAndConditions().add(merge(each1, each2));
-            }
-        }
-        return result;
-    }
-    
-    private AndCondition merge(final AndCondition andCondition1, final AndCondition andCondition2) {
-        AndCondition result = new AndCondition();
-        for (Condition each : andCondition1.getConditions()) {
-            result.getConditions().add(each);
-        }
-        for (Condition each : andCondition2.getConditions()) {
-            result.getConditions().add(each);
-        }
-        return result.optimize();
+        return cachedOtherConditionOperators;
     }
     
     private Condition parseComparisonCondition(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items) {
@@ -239,10 +182,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
                 return result;
             }
         }
-        List<Keyword> otherConditionOperators = new LinkedList<>(Arrays.asList(getCustomizedOtherConditionOperators()));
-        otherConditionOperators.addAll(
-                Arrays.asList(Symbol.LT, Symbol.LT_EQ, Symbol.GT, Symbol.GT_EQ, Symbol.LT_GT, Symbol.BANG_EQ, Symbol.BANG_GT, Symbol.BANG_LT, DefaultKeyword.LIKE, DefaultKeyword.IS));
-        if (lexerEngine.skipIfEqual(otherConditionOperators.toArray(new Keyword[otherConditionOperators.size()]))) {
+        if (lexerEngine.skipIfEqual(getCachedOtherConditionOperators())) {
             lexerEngine.skipIfEqualType(DefaultKeyword.NOT);
             parseOtherCondition(sqlStatement);
         }

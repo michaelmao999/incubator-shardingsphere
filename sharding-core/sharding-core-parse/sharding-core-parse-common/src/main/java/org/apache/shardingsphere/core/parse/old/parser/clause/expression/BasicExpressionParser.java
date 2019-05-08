@@ -20,10 +20,13 @@ package org.apache.shardingsphere.core.parse.old.parser.clause.expression;
 import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.core.parse.antlr.constant.QuoteCharacter;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.TableToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.dialect.oracle.OracleKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.*;
+import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.CommonSelectItem;
+import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.SelectItem;
 import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.parse.util.SQLUtil;
 import org.apache.shardingsphere.core.util.NumberUtil;
@@ -161,6 +164,10 @@ public final class BasicExpressionParser {
         if (lexerEngine.equalOne(Literals.HEX)) {
             return new SQLNumberExpression(NumberUtil.getExactlyNumber(literals, 16));
         }
+
+        if (lexerEngine.equalOne(DefaultKeyword.CASE)) {
+            return new SQLIgnoreExpression(parseCaseWhenExpression());
+        }
         boolean isKeyword = lexerEngine.getCurrentToken().getType() instanceof DefaultKeyword;
         isKeyword = isKeyword || lexerEngine.getCurrentToken().getType() instanceof Symbol;
         isKeyword = isKeyword || lexerEngine.getCurrentToken().getType() instanceof OracleKeyword;
@@ -169,7 +176,31 @@ public final class BasicExpressionParser {
         }
         return new SQLIgnoreExpression(literals);
     }
-    
+
+    private String parseCaseWhenExpression() {
+        StringBuilder result = new StringBuilder();
+        int beginPosition = lexerEngine.getCurrentToken().getEndPosition();
+        result.append(lexerEngine.getCurrentToken().getLiterals()).append(" ");
+        int level = 0;
+        lexerEngine.nextToken();
+        while (true) {
+            if (lexerEngine.equalOne(DefaultKeyword.END) && level == 0 ) {
+                break;
+            }
+            if (lexerEngine.equalOne(DefaultKeyword.CASE)) {
+                level ++;
+            }
+            if (lexerEngine.equalOne(DefaultKeyword.END)) {
+                level --;
+            }
+            lexerEngine.nextToken();
+        }
+        result.append(lexerEngine.getInput().substring(beginPosition, lexerEngine.getCurrentToken().getEndPosition()));
+        return result.toString();
+
+    }
+
+
     private boolean skipIfCompositeExpression(final SQLStatement sqlStatement) {
         if (lexerEngine.equalAny(
                 Symbol.PLUS, Symbol.SUB, Symbol.STAR, Symbol.SLASH, Symbol.PERCENT, Symbol.AMP, Symbol.BAR, Symbol.DOUBLE_AMP, Symbol.DOUBLE_BAR, Symbol.CARET, Symbol.DOT, Symbol.LEFT_PAREN)) {

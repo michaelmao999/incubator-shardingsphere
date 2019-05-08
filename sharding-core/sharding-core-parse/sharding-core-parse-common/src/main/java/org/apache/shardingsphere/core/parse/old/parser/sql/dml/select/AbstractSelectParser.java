@@ -67,7 +67,11 @@ public abstract class AbstractSelectParser implements SQLParser {
     
     @Override
     public final SelectStatement parse() {
-        SelectStatement result = parseInternal();
+        return parse(false);
+    }
+
+    public final SelectStatement parse(boolean isSubGroup) {
+        SelectStatement result = parseInternal(isSubGroup);
         if (result.containsSubquery()) {
             result = result.mergeSubqueryStatement();
         }
@@ -76,15 +80,16 @@ public abstract class AbstractSelectParser implements SQLParser {
         appendDerivedOrderBy(result);
         return result;
     }
-    
-    private SelectStatement parseInternal() {
+
+    private SelectStatement parseInternal(boolean isSubGroup) {
         SelectStatement result = new SelectStatement();
         lexerEngine.nextToken();
-        parseInternal(result);
+        parseInternal(result, isSubGroup);
         return result;
     }
     
-    protected abstract void parseInternal(SelectStatement selectStatement);
+    protected abstract void parseInternal(SelectStatement selectStatement, boolean isSubGroup);
+
     
     protected final void parseSelectList(final SelectStatement selectStatement, final List<SelectItem> items) {
         selectClauseParserFacade.getSelectListClauseParser().parse(selectStatement, items);
@@ -93,13 +98,25 @@ public abstract class AbstractSelectParser implements SQLParser {
     protected final void parseFrom(final SelectStatement selectStatement) {
         lexerEngine.unsupportedIfEqual(DefaultKeyword.INTO);
         if (lexerEngine.skipIfEqualType(DefaultKeyword.FROM)) {
-            parseTable(selectStatement);
+            if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
+                if (lexerEngine.skipIfEqualType(DefaultKeyword.SELECT)) {
+                    SelectStatement subSelectStatement = parse(true);
+                    if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN)) {
+                        return;
+                    }
+                } else {
+
+                }
+            } else {
+                parseTable(selectStatement);
+            }
+
         }
     }
     
     private void parseTable(final SelectStatement selectStatement) {
         if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
-            selectStatement.setSubqueryStatement(parseInternal());
+            selectStatement.setSubqueryStatement(parseInternal(false));
             if (lexerEngine.equalAny(DefaultKeyword.WHERE, Assist.END)) {
                 return;
             }
@@ -107,8 +124,8 @@ public abstract class AbstractSelectParser implements SQLParser {
         selectClauseParserFacade.getTableReferencesClauseParser().parse(selectStatement, false);
     }
     
-    protected final void parseWhere(final ShardingRule shardingRule, final SelectStatement selectStatement, final List<SelectItem> items) {
-        selectClauseParserFacade.getWhereClauseParser().parse(shardingRule, selectStatement, items);
+    protected final void parseWhere(final ShardingRule shardingRule, final SelectStatement selectStatement, final List<SelectItem> items, boolean isSubGroup) {
+        selectClauseParserFacade.getWhereClauseParser().parse(shardingRule, selectStatement, items, isSubGroup);
     }
     
     protected final void parseGroupBy(final SelectStatement selectStatement) {

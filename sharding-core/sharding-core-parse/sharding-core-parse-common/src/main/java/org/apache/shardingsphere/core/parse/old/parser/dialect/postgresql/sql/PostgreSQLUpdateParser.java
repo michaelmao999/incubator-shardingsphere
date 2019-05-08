@@ -36,12 +36,12 @@ public final class PostgreSQLUpdateParser extends AbstractUpdateParser {
     }
     
     @Override
-    protected Keyword[] getSkippedKeywordsBetweenUpdateAndTable() {
+    public Keyword[] getSkippedKeywordsBetweenUpdateAndTable() {
         return new Keyword[] {PostgreSQLKeyword.ONLY};
     }
     
     @Override
-    protected Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable() {
+    public Keyword[] getUnsupportedKeywordsBetweenUpdateAndTable() {
         return new Keyword[0];
     }
 }
