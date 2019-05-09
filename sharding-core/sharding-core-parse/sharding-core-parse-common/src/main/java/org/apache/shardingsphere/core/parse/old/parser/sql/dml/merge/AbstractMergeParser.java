@@ -121,6 +121,7 @@ public abstract class AbstractMergeParser implements SQLParser {
                     lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
                     if (lexerEngine.getCurrentToken().getType().equals(Literals.IDENTIFIER)) {
                         String alias = lexerEngine.getCurrentToken().getLiterals();
+                        mergeStatement.setSelectAlias(alias);
                         lexerEngine.nextToken();
                     }
                     if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN)) {

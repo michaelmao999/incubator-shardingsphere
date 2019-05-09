@@ -37,6 +37,8 @@ public final class MergeStatement extends DQLStatement {
      */
     private SelectStatement usingSelectStatement;
 
+    private String selectAlias;
+
     //WHEN MATCHED THEN
     private UpdateStatement updateStatement;
 

@@ -30,6 +30,7 @@ import org.apache.shardingsphere.core.parse.antlr.sql.token.SelectItemsToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Assist;
 import org.apache.shardingsphere.core.parse.old.lexer.token.DefaultKeyword;
+import org.apache.shardingsphere.core.parse.old.lexer.token.Literals;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Symbol;
 import org.apache.shardingsphere.core.parse.old.parser.clause.facade.AbstractSelectClauseParserFacade;
 import org.apache.shardingsphere.core.parse.old.parser.constant.DerivedColumn;
@@ -99,9 +100,15 @@ public abstract class AbstractSelectParser implements SQLParser {
         lexerEngine.unsupportedIfEqual(DefaultKeyword.INTO);
         if (lexerEngine.skipIfEqualType(DefaultKeyword.FROM)) {
             if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
-                if (lexerEngine.skipIfEqualType(DefaultKeyword.SELECT)) {
+                if (lexerEngine.getCurrentToken().getType() == DefaultKeyword.SELECT) {
                     SelectStatement subSelectStatement = parse(true);
-                    if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN)) {
+                    selectStatement.setSubqueryStatement(subSelectStatement);
+                    lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
+                    if (lexerEngine.getCurrentToken().getType().equals(Literals.IDENTIFIER)) {
+                        String alias = lexerEngine.getCurrentToken().getLiterals();
+                        lexerEngine.nextToken();
+                    }
+                    if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN, DefaultKeyword.WHERE, DefaultKeyword.GROUP)) {
                         return;
                     }
                 } else {
