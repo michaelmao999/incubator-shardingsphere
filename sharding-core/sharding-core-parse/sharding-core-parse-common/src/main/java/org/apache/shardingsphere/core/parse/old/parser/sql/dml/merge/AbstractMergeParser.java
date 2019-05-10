@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.core.metadata.table.ShardingTableMetaData;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.*;
+import org.apache.shardingsphere.core.parse.antlr.sql.token.SQLToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.dialect.oracle.OracleKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.Assist;
@@ -118,6 +119,12 @@ public abstract class AbstractMergeParser implements SQLParser {
                 if (lexerEngine.getCurrentToken().getType() == DefaultKeyword.SELECT) {
                     SelectStatement selectStatement = selectParser.parse(true);
                     mergeStatement.setUsingSelectStatement(selectStatement);
+                    //move select statement tableToken to merge statement, it can be used to rewrite table name later.
+                    List<SQLToken> sqlTokens = selectStatement.getSQLTokens();
+                    int len = sqlTokens.size();
+                    for (int index = 0; index < len; index++) {
+                        mergeStatement.addSQLToken(sqlTokens.get(index));
+                    }
                     lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
                     if (lexerEngine.getCurrentToken().getType().equals(Literals.IDENTIFIER)) {
                         String alias = lexerEngine.getCurrentToken().getLiterals();

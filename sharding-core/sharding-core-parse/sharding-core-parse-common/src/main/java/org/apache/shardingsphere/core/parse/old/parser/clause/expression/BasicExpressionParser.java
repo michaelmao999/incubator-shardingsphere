@@ -17,16 +17,16 @@
 
 package org.apache.shardingsphere.core.parse.old.parser.clause.expression;
 
+import com.google.common.base.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.core.parse.antlr.constant.QuoteCharacter;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
-import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.TableToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
 import org.apache.shardingsphere.core.parse.old.lexer.dialect.oracle.OracleKeyword;
 import org.apache.shardingsphere.core.parse.old.lexer.token.*;
-import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.CommonSelectItem;
-import org.apache.shardingsphere.core.parse.old.parser.context.selectitem.SelectItem;
+import org.apache.shardingsphere.core.parse.old.parser.context.table.Table;
+import org.apache.shardingsphere.core.parse.old.parser.context.table.Tables;
 import org.apache.shardingsphere.core.parse.old.parser.expression.*;
 import org.apache.shardingsphere.core.parse.util.SQLUtil;
 import org.apache.shardingsphere.core.util.NumberUtil;
@@ -83,7 +83,7 @@ public final class BasicExpressionParser {
             return parseFunction(((SQLIdentifierExpression)expression).getName(), sqlStatement );
         }
         String literal2 = lexerEngine.getCurrentToken().getLiterals();
-        if (isInFunction && expression instanceof SQLIdentifierExpression
+        if (expression instanceof SQLIdentifierExpression
                 && (lexerEngine.equalAny(Symbol.PLUS, Symbol.SUB)
                 || ((literal2.startsWith("+") || literal2.startsWith("-") ))
                     && lexerEngine.getCurrentToken().getType() == Literals.INT)) {
@@ -227,8 +227,16 @@ public final class BasicExpressionParser {
     
     private void setTableToken(final SQLStatement sqlStatement, final int beginPosition, final SQLPropertyExpression propertyExpr) {
         String owner = propertyExpr.getOwner().getName();
-        if (sqlStatement.getTables().getTableNames().contains(SQLUtil.getExactlyValue(propertyExpr.getOwner().getName()))) {
+        Tables tables = sqlStatement.getTables();
+        if (tables.getTableNames().contains(SQLUtil.getExactlyValue(owner))) {
             sqlStatement.addSQLToken(new TableToken(beginPosition - owner.length(), beginPosition - 1, owner, QuoteCharacter.getQuoteCharacter(owner)));
+        } else if (tables.getTableAliases().contains(SQLUtil.getExactlyValue(owner))){
+            Optional<Table> tableOptional = tables.findTableFromAlias(owner);
+            if (tableOptional.isPresent()) {
+                String tableName = tableOptional.get().getName();
+                sqlStatement.addSQLToken(new TableToken(beginPosition - owner.length(), beginPosition - 1, owner, QuoteCharacter.getQuoteCharacter(owner)));
+
+            }
         }
     }
 }

@@ -99,7 +99,22 @@ public final class Tables {
         }
         return result;
     }
-    
+
+    /**
+     * Get table names.
+     *
+     * @return table names
+     */
+    public Collection<String> getTableAliases() {
+        Collection<String> result = new LinkedHashSet<>(tables.size(), 1);
+        int len = tables.size();
+        for (int index = 0; index < len; index++) {
+            if (tables.get(index).getAlias().isPresent())
+            result.add(tables.get(index).getAlias().get());
+        }
+        return result;
+    }
+
     /**
      * Find table via table name or alias.
      * 
@@ -122,7 +137,7 @@ public final class Tables {
         return Optional.absent();
     }
     
-    private Optional<Table> findTableFromAlias(final String alias) {
+    public Optional<Table> findTableFromAlias(final String alias) {
         int len = tables.size();
         for (int index = 0; index < len; index++) {
             Table each = tables.get(index);

@@ -29,7 +29,10 @@ import org.apache.shardingsphere.core.optimize.engine.sharding.query.QueryOptimi
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DMLStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.InsertStatement;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.MergeStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.And;
+import org.apache.shardingsphere.core.parse.old.parser.context.condition.Group;
 import org.apache.shardingsphere.core.parse.old.parser.expression.SQLFunctionExector;
 import org.apache.shardingsphere.core.rule.EncryptRule;
 import org.apache.shardingsphere.core.rule.ShardingRule;
@@ -83,6 +86,20 @@ public final class OptimizeEngineFactory {
             return new NewQueryOptimizeEngine(sqlStatement.getRouteCondition(), parameters, sqlFunctionExector);
         }
         // TODO do with DDL and DAL
+        if (sqlStatement instanceof MergeStatement) {
+            //Combine using select, mergeStatement on together.
+            Group group = sqlStatement.getRouteCondition();
+            if (((MergeStatement) sqlStatement).getUsingSelectStatement() != null) {
+                Group innerGroup = ((MergeStatement) sqlStatement).getUsingSelectStatement().getRouteCondition();
+                if (innerGroup != null && innerGroup.size() > 0) {
+                    Group newGroup = new Group();
+                    newGroup.add(group).add(And.instance).add(innerGroup);
+                    newGroup.optimize();
+                    group = newGroup;
+                }
+            }
+            return new NewQueryOptimizeEngine(group, parameters, sqlFunctionExector);
+        }
         return new NewQueryOptimizeEngine(sqlStatement.getRouteCondition(), parameters, sqlFunctionExector);
     }
 

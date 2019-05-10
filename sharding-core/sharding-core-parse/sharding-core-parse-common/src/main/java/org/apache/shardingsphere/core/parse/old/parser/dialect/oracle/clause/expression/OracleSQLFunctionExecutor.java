@@ -30,9 +30,20 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
                     return dateObj;
                 }
             }
+        } else if (function == null || function.length() == 0) {
+            //pure function
+            String functionSQL = functionExpression.toFunctionSQL();
+            if (!parameters.isEmpty() && functionSQL != null && functionSQL.toLowerCase().indexOf("sysdate") >= 0) {
+                Date dateObj = convertSysdate(functionExpression, sqlparameters);
+                functionExpression.setValue(dateObj);
+                return dateObj;
+            }
+
         }
         return null;
     }
+
+
 
     private String sqlExpressionToString(SQLExpression expression) {
         if (expression instanceof SQLIdentifierExpression) {
@@ -107,7 +118,10 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
                     value = Integer.valueOf(valueObj.toString());
                 } else if (sqlExpression instanceof  SQLNumberExpression) {
                     value = Integer.valueOf(((SQLNumberExpression) sqlExpression).getNumber() +  "");
-                    isPlus = 2;
+                    //sysdate -1
+                    if (isPlus == 0) {
+                        isPlus = 2;
+                    }
                 }
                 if (value != null) {
                     if (isPlus == 1) {
@@ -148,6 +162,53 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        return result;
+    }
+
+    private static Date convertSysdate(SQLExpression date1, final List<Object> sqlparameters) {
+        Date result = null;
+        if (date1 instanceof SQLFunctionExpression) {
+            Calendar sysdate = Calendar.getInstance();
+            SQLFunctionExpression sysdateFunction = (SQLFunctionExpression) date1;
+            List<SQLExpression> sysdateExpressionList = sysdateFunction.getParameters();
+            int len = sysdateExpressionList.size();
+            //1: plus   2 : subtract
+            //sysdate - 1
+            int isPlus = 0;
+            Integer value = null;
+            for (int index = 1; index < len; index++) {
+                SQLExpression sqlExpression = sysdateExpressionList.get(index);
+                if (sqlExpression instanceof  SQLIdentifierExpression) {
+                    if ("-".equals(((SQLIdentifierExpression)sqlExpression).getName())) {
+                        isPlus = 1;
+                    } else if ("+".equals(((SQLIdentifierExpression)sqlExpression).getName())) {
+                        isPlus = 2;
+                    } else {
+                        value = Integer.valueOf(((SQLIdentifierExpression)sqlExpression).getName());
+                    }
+                } else if (sqlExpression instanceof SQLTextExpression) {
+                    value = Integer.valueOf(((SQLTextExpression)sqlExpression).getText());
+                } else if (sqlExpression instanceof SQLParameterMarkerExpression) {
+                    Object valueObj =  sqlparameters.get(((SQLParameterMarkerExpression) sqlExpression).getIndex());
+                    value = Integer.valueOf(valueObj.toString());
+                } else if (sqlExpression instanceof  SQLNumberExpression) {
+                    value = Integer.valueOf(((SQLNumberExpression) sqlExpression).getNumber() +  "");
+                    if (isPlus == 0) {
+                        isPlus = 2;
+                    }
+                }
+                if (value != null) {
+                    if (isPlus == 1) {
+                        sysdate.add(Calendar.DATE, -1* value);
+                    } else if (isPlus == 2) {
+                        sysdate.add(Calendar.DATE, value);
+                    }
+                    isPlus = 0;
+                    value = null;
+                }
+            }
+            result = sysdate.getTime();
         }
         return result;
     }
