@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.shardingsphere.core.parse.optimizer;
+package org.apache.shardingsphere.core.parse.antlr.optimizer.select;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -39,12 +39,12 @@ import org.apache.shardingsphere.core.parse.old.parser.context.table.Table;
 import java.util.List;
 
 /**
- * Select optimizer for MySQL.
+ * Select optimizer.
  *
  * @author duhongjun
  * @author panjuan
  */
-public final class MySQLSelectOptimizer implements SQLStatementOptimizer {
+public final class SelectOptimizer implements SQLStatementOptimizer {
     
     @Override
     public void optimize(final SQLStatement sqlStatement, final ShardingTableMetaData shardingTableMetaData) {
@@ -93,7 +93,8 @@ public final class MySQLSelectOptimizer implements SQLStatementOptimizer {
         return each instanceof AggregationSelectItem && AggregationType.AVG == ((AggregationSelectItem) each).getType();
     }
     
-    private void appendDerivedOrderColumns(final SelectItemsToken selectItemsToken, final List<OrderItem> orderItems, final SelectStatement selectStatement, final ShardingTableMetaData shardingTableMetaData) {
+    private void appendDerivedOrderColumns(final SelectItemsToken selectItemsToken, 
+                                           final List<OrderItem> orderItems, final SelectStatement selectStatement, final ShardingTableMetaData shardingTableMetaData) {
         int derivedColumnOffset = 0;
         for (OrderItem each : orderItems) {
             if (!containsItem(selectStatement, each, shardingTableMetaData)) {
@@ -104,7 +105,8 @@ public final class MySQLSelectOptimizer implements SQLStatementOptimizer {
         }
     }
     
-    private void appendDerivedGroupColumns(final SelectItemsToken selectItemsToken, final List<OrderItem> orderItems, final SelectStatement selectStatement, final ShardingTableMetaData shardingTableMetaData) {
+    private void appendDerivedGroupColumns(final SelectItemsToken selectItemsToken, 
+                                           final List<OrderItem> orderItems, final SelectStatement selectStatement, final ShardingTableMetaData shardingTableMetaData) {
         int derivedColumnOffset = 0;
         for (OrderItem each : orderItems) {
             if (!containsItem(selectStatement, each, shardingTableMetaData)) {

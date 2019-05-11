@@ -24,10 +24,9 @@ import org.apache.shardingsphere.api.hint.HintManager;
 import org.apache.shardingsphere.core.optimize.condition.ShardingCondition;
 import org.apache.shardingsphere.core.optimize.result.insert.InsertOptimizeResultUnit;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
-import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.InsertStatement;
 import org.apache.shardingsphere.core.route.type.RoutingEngine;
 import org.apache.shardingsphere.core.route.type.RoutingResult;
-import org.apache.shardingsphere.core.route.type.RoutingTable;
+import org.apache.shardingsphere.core.route.type.RoutingUnit;
 import org.apache.shardingsphere.core.route.type.TableUnit;
 import org.apache.shardingsphere.core.rule.BindingTableRule;
 import org.apache.shardingsphere.core.rule.DataNode;
@@ -63,9 +62,9 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
     private RoutingResult generateRoutingResult(final Collection<DataNode> routedDataNodes) {
         RoutingResult result = new RoutingResult();
         for (DataNode each : routedDataNodes) {
-            TableUnit tableUnit = new TableUnit(each.getDataSourceName());
-            tableUnit.getRoutingTables().add(new RoutingTable(logicTableName, each.getTableName()));
-            result.getTableUnits().getTableUnits().add(tableUnit);
+            RoutingUnit routingUnit = new RoutingUnit(each.getDataSourceName());
+            routingUnit.getTableUnits().add(new TableUnit(logicTableName, each.getTableName()));
+            result.getRoutingUnits().add(routingUnit);
         }
         return result;
     }

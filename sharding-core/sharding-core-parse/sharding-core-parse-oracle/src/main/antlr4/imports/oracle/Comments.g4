@@ -15,25 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.shardingsphere.core.route.type;
+lexer grammar Comments;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import Symbol;
 
-/**
- * Routing table.
- * 
- * @author maxiaoguang
- */
-@RequiredArgsConstructor
-@Getter
-@EqualsAndHashCode
-@ToString
-public final class RoutingTable {
-    
-    private final String logicTableName;
-    
-    private final String actualTableName;
-}
+BLOCK_COMMENT:  '/*' .*? '*/' -> channel(HIDDEN);
+INLINE_COMMENT: (('-- ' | '#') ~[\r\n]* ('\r'? '\n' | EOF) | '--' ('\r'? '\n' | EOF)) -> channel(HIDDEN);

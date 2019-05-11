@@ -40,7 +40,7 @@ public final class SelectItemsExtractor implements OptionalSQLSegmentExtractor {
     
     @Override
     public Optional<SelectItemsSegment> extract(final ParserRuleContext ancestorNode, final Map<ParserRuleContext, Integer> parameterMarkerIndexes) {
-        ParserRuleContext selectItemsNode = ExtractorUtils.getFirstChildNode(ancestorNode, RuleName.SELECT_ITEMS);
+        ParserRuleContext selectItemsNode = ExtractorUtils.getFirstChildNode(findMainQueryNode(ancestorNode, false), RuleName.SELECT_ITEMS);
         SelectItemsSegment result = new SelectItemsSegment(selectItemsNode.getStart().getStartIndex(), selectItemsNode.getStop().getStopIndex(), extractDistinct(ancestorNode));
         Optional<ParserRuleContext> unqualifiedShorthandNode = ExtractorUtils.findFirstChildNode(selectItemsNode, RuleName.UNQUALIFIED_SHORTHAND);
         if (unqualifiedShorthandNode.isPresent()) {
@@ -71,5 +71,18 @@ public final class SelectItemsExtractor implements OptionalSQLSegmentExtractor {
         Optional<ParserRuleContext> duplicateSpecificationNode = ExtractorUtils.findFirstChildNode(selectItemsNode, RuleName.DUPLICATE_SPECIFICATION);
         return duplicateSpecificationNode.isPresent()
                 && (duplicateSpecificationNode.get().getText().equalsIgnoreCase("DISTINCT") || duplicateSpecificationNode.get().getText().equalsIgnoreCase("DISTINCTROW"));
+    }
+    
+    private ParserRuleContext findMainQueryNode(final ParserRuleContext ancestorNode, final boolean isFromRecursive) {
+        Optional<ParserRuleContext> tableReferencesNode = ExtractorUtils.findFirstChildNode(ancestorNode, RuleName.TABLE_REFERENCES);
+        if (!tableReferencesNode.isPresent()) {
+            return ancestorNode;
+        }
+        ParserRuleContext result = tableReferencesNode.get();
+        Optional<ParserRuleContext> subqueryNode = ExtractorUtils.findSingleNodeFromFirstDescendant(tableReferencesNode.get(), RuleName.SUBQUERY);
+        if (subqueryNode.isPresent()) {
+            result = findMainQueryNode(subqueryNode.get(), true);
+        }
+        return isFromRecursive ? result : ancestorNode;
     }
 }

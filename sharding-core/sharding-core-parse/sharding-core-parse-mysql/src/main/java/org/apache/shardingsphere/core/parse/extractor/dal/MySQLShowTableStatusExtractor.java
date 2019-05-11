@@ -15,31 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.shardingsphere.core.parse.antlr.extractor.impl.dml.select;
+package org.apache.shardingsphere.core.parse.extractor.dal;
 
 import com.google.common.base.Optional;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.shardingsphere.core.parse.antlr.extractor.api.OptionalSQLSegmentExtractor;
 import org.apache.shardingsphere.core.parse.antlr.extractor.util.ExtractorUtils;
 import org.apache.shardingsphere.core.parse.antlr.extractor.util.RuleName;
-import org.apache.shardingsphere.core.parse.antlr.sql.segment.dml.order.GroupBySegment;
+import org.apache.shardingsphere.core.parse.sql.segment.dal.ShowTableStatusSegment;
 
 import java.util.Map;
 
 /**
- * Group by extractor.
- *
- * @author duhongjun
- * @author panjuan
+ * Show table status extractor for MySQL.
+ * 
+ * @author zhangliang
  */
-public final class GroupByExtractor implements OptionalSQLSegmentExtractor {
-    
-    private final OrderByItemExtractor orderByItemExtractor = new OrderByItemExtractor();
+public final class MySQLShowTableStatusExtractor implements OptionalSQLSegmentExtractor {
     
     @Override
-    public Optional<GroupBySegment> extract(final ParserRuleContext ancestorNode, final Map<ParserRuleContext, Integer> parameterMarkerIndexes) {
-        Optional<ParserRuleContext> groupByNode = ExtractorUtils.findFirstChildNode(ancestorNode, RuleName.GROUP_BY_CLAUSE);
-        return groupByNode.isPresent() ? Optional.of(new GroupBySegment(groupByNode.get().getStop().getStopIndex(), orderByItemExtractor.extract(groupByNode.get(), parameterMarkerIndexes)))
-                : Optional.<GroupBySegment>absent();
+    public Optional<ShowTableStatusSegment> extract(final ParserRuleContext ancestorNode, final Map<ParserRuleContext, Integer> parameterMarkerIndexes) {
+        Optional<ParserRuleContext> fromSchemaNode = ExtractorUtils.findFirstChildNodeNoneRecursive(ancestorNode, RuleName.FROM_SCHEMA);
+        return Optional.of(fromSchemaNode.isPresent()
+                ? new ShowTableStatusSegment(fromSchemaNode.get().getStart().getStartIndex(), fromSchemaNode.get().getStop().getStopIndex()) : new ShowTableStatusSegment());
     }
 }
