@@ -1,0 +1,3 @@
+190 path=sharding-proxy/sharding-proxy-backend/src/main/resources/META-INF/services/org.apache.shardingsphere.shardingproxy.backend.communication.jdbc.recognizer.spi.JDBCDriverURLRecognizer
+25 mtime=1556338508.9469
+27 atime=1557546721.778025
