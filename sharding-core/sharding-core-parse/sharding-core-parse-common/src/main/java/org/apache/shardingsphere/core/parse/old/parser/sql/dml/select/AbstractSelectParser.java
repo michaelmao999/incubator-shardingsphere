@@ -108,7 +108,7 @@ public abstract class AbstractSelectParser implements SQLParser {
                         String alias = lexerEngine.getCurrentToken().getLiterals();
                         lexerEngine.nextToken();
                     }
-                    if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN, DefaultKeyword.WHERE, DefaultKeyword.GROUP)) {
+                    if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN, DefaultKeyword.WHERE, DefaultKeyword.GROUP, Symbol.RIGHT_PAREN)) {
                         return;
                     }
                 } else {
