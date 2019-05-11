@@ -108,10 +108,8 @@ public final class ShardingPreparedStatement extends AbstractShardingPreparedSta
             clearPrevious();
             shard();
             initPreparedStatementExecutor();
-            MergeEngine mergeEngine = MergeEngineFactory.newInstance(connection.getShardingContext().getDatabaseType(),
-                    connection.getShardingContext().getShardingRule(),
-                    routeResult, connection.getShardingContext().getMetaData().getTable(),
-                    preparedStatementExecutor.executeQuery());
+            MergeEngine mergeEngine = MergeEngineFactory.newInstance(connection.getShardingContext().getDatabaseType(), connection.getShardingContext().getShardingRule(), 
+                    routeResult, connection.getShardingContext().getMetaData().getTable(), preparedStatementExecutor.executeQuery());
             result = getResultSet(mergeEngine);
         } finally {
             clearBatch();
