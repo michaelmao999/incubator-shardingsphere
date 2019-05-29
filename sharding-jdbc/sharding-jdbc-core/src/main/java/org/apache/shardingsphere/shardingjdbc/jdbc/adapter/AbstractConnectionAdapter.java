@@ -233,7 +233,7 @@ public abstract class AbstractConnectionAdapter extends AbstractUnsupportedOpera
     }
     
     @Override
-    public final void commit() throws SQLException {
+    public void commit() throws SQLException {
         if (TransactionType.LOCAL == transactionType) {
             commitForLocalTransaction();
         } else {
