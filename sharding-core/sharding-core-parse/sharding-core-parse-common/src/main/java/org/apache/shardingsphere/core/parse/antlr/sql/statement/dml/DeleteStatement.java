@@ -34,4 +34,6 @@ public final class DeleteStatement extends DMLStatement {
     private int whereStartIndex;
     
     private int whereStopIndex;
+
+    private int whereParameterStartIndex;
 }

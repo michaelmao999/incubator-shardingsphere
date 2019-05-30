@@ -20,7 +20,9 @@ package org.apache.shardingsphere.core.parse.old.parser.clause;
 import com.google.common.base.Optional;
 import org.apache.shardingsphere.core.constant.DatabaseType;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.SQLStatement;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.DeleteStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.SelectStatement;
+import org.apache.shardingsphere.core.parse.antlr.sql.statement.dml.UpdateStatement;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.OffsetToken;
 import org.apache.shardingsphere.core.parse.antlr.sql.token.RowCountToken;
 import org.apache.shardingsphere.core.parse.old.lexer.LexerEngine;
@@ -83,6 +85,15 @@ public abstract class WhereClauseParser implements SQLClauseParser {
     }
     
     public void parseWhere(final ShardingRule shardingRule, final SQLStatement sqlStatement, final List<SelectItem> items, boolean isSubGroup) {
+        if (sqlStatement instanceof UpdateStatement) {
+            UpdateStatement updateStatement = (UpdateStatement) sqlStatement;
+            updateStatement.setWhereStartIndex(lexerEngine.getCurrentToken().getEndPosition()- lexerEngine.getCurrentToken().getLiterals().length());
+            updateStatement.setWhereParameterStartIndex(updateStatement.getParametersIndex());
+        } else if (sqlStatement instanceof DeleteStatement) {
+            DeleteStatement deleteStatement = (DeleteStatement) sqlStatement;
+            deleteStatement.setWhereStartIndex(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length() );
+            deleteStatement.setWhereParameterStartIndex(deleteStatement.getParametersIndex());
+        }
         Group group = parseGroup(shardingRule, sqlStatement, items, isSubGroup)
                 .optimize();
         if (group.size() > 0) {
