@@ -99,6 +99,7 @@ public abstract class WhereClauseParser implements SQLClauseParser {
         if (group.size() > 0) {
             sqlStatement.getRouteCondition().add(group);
         }
+
     }
 
 

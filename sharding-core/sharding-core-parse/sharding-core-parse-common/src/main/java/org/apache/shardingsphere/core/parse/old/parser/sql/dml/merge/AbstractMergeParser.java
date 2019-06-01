@@ -115,9 +115,16 @@ public abstract class AbstractMergeParser implements SQLParser {
 
     private void parseMergeUsing(MergeStatement mergeStatement) {
         if (lexerEngine.skipIfEqualType(DefaultKeyword.USING)) {
+            int usingPos = lexerEngine.getCurrentToken().getEndPosition() - 1;
             if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
                 if (lexerEngine.getCurrentToken().getType() == DefaultKeyword.SELECT) {
+                    mergeStatement.setUsingStartIndex(usingPos);
+                    mergeStatement.setUsingParameterStartIndex(mergeStatement.getParametersIndex());
+
                     SelectStatement selectStatement = selectParser.parse(true);
+                    if (selectStatement.getParametersIndex() > 0) {
+                        mergeStatement.setParametersIndex(mergeStatement.getParametersIndex() + selectStatement.getParametersIndex());
+                    }
                     mergeStatement.setUsingSelectStatement(selectStatement);
                     //move select statement tableToken to merge statement, it can be used to rewrite table name later.
                     List<SQLToken> sqlTokens = selectStatement.getSQLTokens();
@@ -132,6 +139,8 @@ public abstract class AbstractMergeParser implements SQLParser {
                         lexerEngine.nextToken();
                     }
                     if (lexerEngine.equalAny(DefaultKeyword.ON, Assist.END, DefaultKeyword.WHEN)) {
+                        mergeStatement.setUsingStopIndex(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length());
+                        mergeStatement.setUsingParameterEndIndex(mergeStatement.getParametersIndex());
                         return;
                     }
                 } else {
@@ -151,7 +160,11 @@ public abstract class AbstractMergeParser implements SQLParser {
             if (mergeStatement.getUsingSelectStatement() != null && mergeStatement.getUsingSelectStatement().getItems() != null) {
                 items.addAll(mergeStatement.getUsingSelectStatement().getItems());
             }
+            mergeStatement.setOnStartIndex(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length());
+            mergeStatement.setOnParameterStartIndex(mergeStatement.getParametersIndex());
             mergeClauseParserFacade.getUsingWhereClauseParser().parseWhere(shardingRule, mergeStatement, items, false);
+            mergeStatement.setOnStopIndex(lexerEngine.getCurrentToken().getEndPosition() - lexerEngine.getCurrentToken().getLiterals().length());
+            mergeStatement.setOnParameterEndIndex(mergeStatement.getParametersIndex());
         }
     }
 

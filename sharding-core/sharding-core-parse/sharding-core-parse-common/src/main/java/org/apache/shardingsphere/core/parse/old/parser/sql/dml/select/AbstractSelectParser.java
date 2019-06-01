@@ -102,6 +102,9 @@ public abstract class AbstractSelectParser implements SQLParser {
             if (lexerEngine.skipIfEqualType(Symbol.LEFT_PAREN)) {
                 if (lexerEngine.getCurrentToken().getType() == DefaultKeyword.SELECT) {
                     SelectStatement subSelectStatement = parse(true);
+                    if (subSelectStatement.getParametersIndex() > 0) {
+                        selectStatement.setParametersIndex(selectStatement.getParametersIndex() + subSelectStatement.getParametersIndex());
+                    }
                     selectStatement.setSubqueryStatement(subSelectStatement);
                     lexerEngine.skipIfEqualType(Symbol.RIGHT_PAREN);
                     if (lexerEngine.getCurrentToken().getType().equals(Literals.IDENTIFIER)) {
