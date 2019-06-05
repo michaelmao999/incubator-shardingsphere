@@ -24,13 +24,11 @@ import org.apache.shardingsphere.api.config.sharding.strategy.ComplexShardingStr
 import org.apache.shardingsphere.api.sharding.complex.ComplexKeysShardingAlgorithm;
 import org.apache.shardingsphere.api.sharding.complex.ComplexKeysShardingValue;
 import org.apache.shardingsphere.core.strategy.route.ShardingStrategy;
+import org.apache.shardingsphere.core.strategy.route.value.BetweenRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.ListRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.RouteValue;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Complex sharding strategy.
@@ -55,10 +53,16 @@ public final class ComplexShardingStrategy implements ShardingStrategy {
     @SuppressWarnings("unchecked")
     @Override
     public Collection<String> doSharding(final Collection<String> availableTargetNames, final Collection<RouteValue> shardingValues) {
-        Map<String, Collection<Comparable<?>>> columnShardingValues = new HashMap<>(shardingValues.size(), 1);
+        Map<String, Collection<?>> columnShardingValues = new HashMap<>(shardingValues.size(), 1);
         String logicTableName = "";
         for (RouteValue each : shardingValues) {
-            columnShardingValues.put(each.getColumnName(), ((ListRouteValue) each).getValues());
+            if (each instanceof  ListRouteValue) {
+                columnShardingValues.put(each.getColumnName(), ((ListRouteValue) each).getValues());
+            } else if (each instanceof BetweenRouteValue) {
+                List  betweenRouteList = new ArrayList();
+                betweenRouteList.add(each);
+                columnShardingValues.put(each.getColumnName(), betweenRouteList);
+            }
             logicTableName = each.getTableName();
         }
         Collection<String> shardingResult = shardingAlgorithm.doSharding(availableTargetNames, new ComplexKeysShardingValue(logicTableName, columnShardingValues));

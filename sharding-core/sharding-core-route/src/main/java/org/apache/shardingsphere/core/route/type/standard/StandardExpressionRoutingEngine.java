@@ -108,8 +108,9 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
             } else if (condition instanceof RouteValue) {
                 routeValues.clear();
                 routeValues.add((RouteValue) condition);
-                Collection<DataNode> dataNodes = route(tableRule, getShardingValuesFromShardingConditions(shardingRule.getDatabaseShardingStrategy(tableRule).getShardingColumns(), routeValues),
-                        getShardingValuesFromShardingConditions(shardingRule.getTableShardingStrategy(tableRule).getShardingColumns(), routeValues));
+                List<RouteValue> databaseShardingValues =  getShardingValuesFromShardingConditions(shardingRule.getDatabaseShardingStrategy(tableRule).getShardingColumns(), routeValues);
+                List<RouteValue> tableShardingValues = getShardingValuesFromShardingConditions(shardingRule.getTableShardingStrategy(tableRule).getShardingColumns(), routeValues);
+                Collection<DataNode> dataNodes = route(tableRule, databaseShardingValues, tableShardingValues);
                 //reviseInsertOptimizeResult(routeValues, dataNodes);
                 combineResult(result, dataNodes, logicOp);
                 logicOp = 0;

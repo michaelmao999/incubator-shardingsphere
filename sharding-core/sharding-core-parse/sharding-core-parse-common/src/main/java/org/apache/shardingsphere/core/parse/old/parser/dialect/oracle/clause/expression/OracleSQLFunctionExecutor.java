@@ -224,10 +224,10 @@ public class OracleSQLFunctionExecutor implements SQLFunctionExector {
             for (int index = 0; index < len; index++) {
                 if (formatArray[index].toLowerCase().indexOf('y') >= 0) {
                     ymd.put("year", dateArray[index]);
-                } else if (formatArray[index].toLowerCase().indexOf('m') >= 0) {
-                    ymd.put("month", dateArray[index]);
                 }else if (formatArray[index].toLowerCase().indexOf('d') >= 0) {
                     ymd.put("day", dateArray[index]);
+                } else if (formatArray[index].toLowerCase().indexOf('m') >= 0) {
+                    ymd.put("month", dateArray[index]);
                 }
             }
         }

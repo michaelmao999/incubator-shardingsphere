@@ -58,6 +58,11 @@ public class Group implements SQLCondition{
             } else {
                 if (sqlCondition instanceof  And || sqlCondition instanceof  Or) {
                     isFirstExpression = true;
+                } else if (sqlCondition instanceof NullCondition) {
+                    expressions.remove(index);
+                    index--;
+                    len--;
+                    continue;
                 } else {
                     throw new IllegalArgumentException("Wrong SQL Expression (there are two condition together)");
                 }
