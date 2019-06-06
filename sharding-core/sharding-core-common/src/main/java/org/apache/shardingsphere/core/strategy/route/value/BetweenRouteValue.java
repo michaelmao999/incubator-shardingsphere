@@ -20,6 +20,7 @@ package org.apache.shardingsphere.core.strategy.route.value;
 import com.google.common.collect.Range;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * Route value for between.
@@ -29,10 +30,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public final class BetweenRouteValue<T extends Comparable<?>> implements RouteValue {
-    
+
+
     private final String columnName;
-    
+
     private final String tableName;
-    
-    private final Range<T> valueRange;
+
+    @Getter
+    @Setter
+    private Range<T> valueRange;
+
+    public BetweenRouteValue(String columnName, String tableName, Range<T> valueRange) {
+        this.columnName = columnName;
+        this.tableName = tableName;
+        this.valueRange = valueRange;
+    }
+
+
 }
