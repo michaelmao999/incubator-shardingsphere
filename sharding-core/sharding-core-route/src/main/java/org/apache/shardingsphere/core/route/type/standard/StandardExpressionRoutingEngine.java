@@ -95,6 +95,12 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
     private Collection<DataNode> routeByShardingConditionsWithCondition(final TableRule tableRule, final GroupRouteValue group) {
         Collection<DataNode> result = new LinkedList<>();
         List<RouteValue> routeValues = new ArrayList<>();
+        Set<String> targetDatabases = new HashSet<>();
+        routeDatasourceByCondition(tableRule, group, targetDatabases);
+        if (targetDatabases.isEmpty()) {
+            Collection<String> availableTargetDatabases = tableRule.getActualDatasourceNames();
+            targetDatabases.addAll(availableTargetDatabases);
+        }
         short logicOp = 0;
         for (RouteValueCondition condition : group.getConditionList()) {
             if (condition instanceof AndValue) {
@@ -108,9 +114,8 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
             } else if (condition instanceof RouteValue) {
                 routeValues.clear();
                 routeValues.add((RouteValue) condition);
-                List<RouteValue> databaseShardingValues =  getShardingValuesFromShardingConditions(shardingRule.getDatabaseShardingStrategy(tableRule).getShardingColumns(), routeValues);
                 List<RouteValue> tableShardingValues = getShardingValuesFromShardingConditions(shardingRule.getTableShardingStrategy(tableRule).getShardingColumns(), routeValues);
-                Collection<DataNode> dataNodes = route(tableRule, databaseShardingValues, tableShardingValues);
+                Collection<DataNode> dataNodes = routeWithDatasource(tableRule, targetDatabases, tableShardingValues);
                 //reviseInsertOptimizeResult(routeValues, dataNodes);
                 combineResult(result, dataNodes, logicOp);
                 logicOp = 0;
@@ -118,6 +123,31 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
 
         }
         return result;
+    }
+
+    private void routeDatasourceByCondition(final TableRule tableRule, final GroupRouteValue group, final Set<String> datasources) {
+        Collection<String> columns4DatabaseSharding = shardingRule.getDatabaseShardingStrategy(tableRule).getShardingColumns();
+        if (columns4DatabaseSharding.isEmpty()) {
+            return;
+        }
+        List<RouteValue> routeValues = new ArrayList<>();
+        int len = group.getConditionList().size();
+        for (RouteValueCondition condition : group.getConditionList()) {
+            if (condition instanceof GroupRouteValue){
+                routeDatasourceByCondition(tableRule, (GroupRouteValue) condition, datasources);
+            } else if (condition instanceof RouteValue) {
+                routeValues.clear();
+                routeValues.add((RouteValue) condition);
+                List<RouteValue> databaseShardingValues =  getShardingValuesFromShardingConditions(columns4DatabaseSharding, routeValues);
+                if (!databaseShardingValues.isEmpty()) {
+                    Collection<String> routedDataSources = routeDataSources(tableRule, databaseShardingValues);
+                    if (!routedDataSources.isEmpty()) {
+                        datasources.addAll(routedDataSources);
+                    }
+                }
+            }
+
+        }
     }
 
     private void combineResult(Collection<DataNode> result1, Collection<DataNode> subResult, short logicOp) {
@@ -259,7 +289,15 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
 //        }
 //        return result;
 //    }
-    
+
+    private Collection<DataNode> routeWithDatasource(final TableRule tableRule, final Set<String> routedDataSources, final List<RouteValue> tableShardingValues) {
+        Collection<DataNode> result = new LinkedList<>();
+        for (String each : routedDataSources) {
+            result.addAll(routeTables(tableRule, each, tableShardingValues));
+        }
+        return removeNonExistNodes(result, tableRule);
+    }
+
     private Collection<DataNode> route(final TableRule tableRule, final List<RouteValue> databaseShardingValues, final List<RouteValue> tableShardingValues) {
         Collection<DataNode> result = new LinkedList<>();
         Collection<String> routedDataSources = routeDataSources(tableRule, databaseShardingValues);
