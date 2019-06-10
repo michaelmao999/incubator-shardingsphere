@@ -295,7 +295,7 @@ public final class StandardExpressionRoutingEngine implements RoutingEngine {
         for (String each : routedDataSources) {
             result.addAll(routeTables(tableRule, each, tableShardingValues));
         }
-        return removeNonExistNodes(result, tableRule);
+        return result;
     }
 
     private Collection<DataNode> route(final TableRule tableRule, final List<RouteValue> databaseShardingValues, final List<RouteValue> tableShardingValues) {
