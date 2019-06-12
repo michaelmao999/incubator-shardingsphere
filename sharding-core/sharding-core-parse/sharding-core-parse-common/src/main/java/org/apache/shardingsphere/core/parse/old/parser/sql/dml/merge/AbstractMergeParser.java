@@ -149,7 +149,13 @@ public abstract class AbstractMergeParser implements SQLParser {
             } else {
                 SelectStatement selectStatement = new SelectStatement();
                 mergeStatement.setUsingSelectStatement(selectStatement);
+                //MERGE INTO pg_wk_bankcleartxn a USING pg_wechat_txn b
+                mergeStatement.setUsingStartIndex(this.lexerEngine.getCurrentToken().getEndPosition() - this.lexerEngine.getCurrentToken().getLiterals().length());
+                mergeStatement.setUsingParameterStartIndex(mergeStatement.getParametersIndex());
+
                 mergeClauseParserFacade.getUsingTableReferencesClauseParser().parse(selectStatement, false);
+                mergeStatement.setUsingStopIndex(this.lexerEngine.getCurrentToken().getEndPosition() - this.lexerEngine.getCurrentToken().getLiterals().length());
+                mergeStatement.setUsingParameterEndIndex(mergeStatement.getParametersIndex());
             }
         }
     }
